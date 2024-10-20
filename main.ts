@@ -1,14 +1,122 @@
-import { App, Plugin, WorkspaceLeaf, ItemView, ViewStateResult, Notice, TFile, setIcon } from 'obsidian';
+import { App, Plugin, WorkspaceLeaf, ItemView, ViewStateResult, Notice, TFile, setIcon, PluginSettingTab, Setting } from 'obsidian';
 
 export const VIEW_TYPE_HOMEPAGE = "homepage-view";
 
+class MyPluginSettings {
+    autoUpdateOnChange: boolean = false;
+    enableAutoUpdate: boolean = false;
+    timeUpdate: number = 20;
+
+    enableDarkMode: boolean = false;
+    tableFontSize: number = 18;
+    tagButtonFontSize: number = 16;
+
+    myFrontmatter: string[] = [];
+    myFrontmatterKey: string[] = [];
+}
+
+class MyPluginSettingTab extends PluginSettingTab {
+    plugin: Homepage;
+
+    constructor(app: App, plugin: Homepage) {
+        super(app, plugin);
+        this.plugin = plugin;
+    }
+
+    display() {
+        const { containerEl } = this;
+
+        containerEl.empty();
+        containerEl.createEl('h2', { text: 'Tag search page plugin settings' });
+
+        new Setting(containerEl)
+            .setName('黑暗模式')
+            .setDesc('預設是亮色模式，目前默認無法使用')
+            .addToggle(toggle =>
+                toggle
+                    .setValue(this.plugin.settings.enableDarkMode)
+                    .onChange(async (value) => {
+                        // 目前默認無法使用 todo: 增加 dark mode
+                        this.plugin.settings.enableDarkMode = false;
+                        await this.plugin.saveSettings();
+                    }));
+
+        new Setting(containerEl)
+            .setName('啟用自動更新頁面')
+            .setDesc('預設是開啟')
+            .addToggle(toggle =>
+                toggle
+                    .setValue(this.plugin.settings.enableAutoUpdate)
+                    .onChange(async (value) => {
+                        this.plugin.settings.enableAutoUpdate = value;
+                        this.plugin.settings.autoUpdateOnChange = true;
+                        await this.plugin.saveSettings();
+                    }));
+
+        new Setting(containerEl)
+            .setName('更新時間')
+            .setDesc('預設是 20 秒，最少 2 秒，要先啟用自動更新才有效')
+            .addText(text => text.setValue(this.plugin.settings.timeUpdate.toString()).onChange(async (value) => {
+                let intValue = parseInt(value);
+                if (intValue >= 2) {
+                    this.plugin.settings.timeUpdate = intValue;
+                    this.plugin.settings.autoUpdateOnChange = true;
+                    await this.plugin.saveSettings();
+                }
+            }));
+
+        new Setting(containerEl)
+            .setName('表格字體大小')
+            .setDesc('預設是 18px')
+            .addText(text => text.setValue(this.plugin.settings.tableFontSize.toString()).onChange(async (value) => {
+                this.plugin.settings.tableFontSize = parseInt(value);
+                await this.plugin.saveSettings();
+            }));
+
+        new Setting(containerEl)
+            .setName('按鈕字體大小')
+            .setDesc('預設是 16px')
+            .addText(text => text.setValue(this.plugin.settings.tagButtonFontSize.toString()).onChange(async (value) => {
+                this.plugin.settings.tagButtonFontSize = parseInt(value);
+                await this.plugin.saveSettings();
+            }));
+
+        new Setting(containerEl)
+            .setName('frontmatterKey')
+            .setDesc('table 的 header，如果沒有設定默認使用 null 請用逗號隔開如: 日期,描述')
+            .addText(text => text.setValue(this.plugin.settings.myFrontmatterKey.join(',')).onChange(async (value) => {
+                this.plugin.settings.myFrontmatterKey = value.split(',');
+                await this.plugin.saveSettings();
+            }));
+
+        new Setting(containerEl)
+            .setName('frontmatter')
+            .setDesc('table 的資料key，請用逗號隔開如: date,desc')
+            .addText(text => text.setValue(this.plugin.settings.myFrontmatter.join(',')).onChange(async (value) => {
+                this.plugin.settings.myFrontmatter = value.split(',');
+                await this.plugin.saveSettings();
+            }));
+    }
+}
+
 export default class Homepage extends Plugin {
+    settings: MyPluginSettings;
+
+    getHomepageView(): HomepageView | null {
+        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_HOMEPAGE);
+        if (leaves.length > 0) {
+            return leaves[0].view as HomepageView;
+        }
+        return null;
+    }
+
     async onload() {
+        await this.loadSettings();
+        this.addSettingTab(new MyPluginSettingTab(this.app, this));
         this.registerView(
             VIEW_TYPE_HOMEPAGE,
-            (leaf) => new HomepageView(leaf)
+            (leaf) => new HomepageView(leaf, this.settings)
         );
-
         this.addCommand({
             id: 'open-homepage',
             name: 'Open Homepage',
@@ -16,6 +124,31 @@ export default class Homepage extends Plugin {
                 this.activateView();
             }
         });
+
+        this.addCommand({
+            id: 'update-homepage',
+            name: 'Update Homepage',
+            callback: () => {
+                const view = this.getHomepageView();
+                if (view) {
+                    view.update();
+                } else {
+                    new Notice('首頁視圖未打開');
+                }
+            }
+        });
+    }
+
+    async loadSettings() {
+        const data = await this.loadData();
+        this.settings = Object.assign(new MyPluginSettings(), data);
+    }
+
+    async saveSettings() {
+        await this.saveData(this.settings);
+        if (this.settings.autoUpdateOnChange) {
+            this.updateAllHomepageViews();
+        }
     }
 
     async activateView() {
@@ -31,13 +164,27 @@ export default class Homepage extends Plugin {
         }
         workspace.revealLeaf(leaf);
     }
+
+    updateAllHomepageViews() {
+        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_HOMEPAGE);
+        leaves.forEach(leaf => {
+            const view = leaf.view as HomepageView;
+            if (view) {
+                view.updateAutoUpdateStatus(this.settings.enableAutoUpdate, this.settings.timeUpdate);
+            }
+        });
+    }
 }
 
-
-
 class HomepageView extends ItemView {
-    constructor(leaf: WorkspaceLeaf) {
+    private autoUpdateInterval: NodeJS.Timeout | null = null;
+    public tagNowSearch: string = '';
+    private sortAsc: boolean = true;
+    settings: MyPluginSettings;
+
+    constructor(leaf: WorkspaceLeaf, settings: MyPluginSettings) {
         super(leaf);
+        this.settings = settings;
     }
 
     getViewType() {
@@ -56,12 +203,54 @@ class HomepageView extends ItemView {
         const container = this.containerEl.children[1];
         container.empty();
 
-        // 原有的代碼
-        this.buildTagsButton();
+        this.buildTagsButton(true);
         this.buildSearchBar();
+
+        // 當頁面打開時，啟動自動更新
+        if (this.settings.enableAutoUpdate) {
+            this.startAutoUpdate();
+        }
     }
 
-    getAllTags(): string[] {
+    async onClose() {
+        // 當頁面關閉時，停止自動更新
+        this.stopAutoUpdate();
+    }
+
+    updateAutoUpdateStatus(enableAutoUpdate: boolean, timeUpdate: number) {
+        this.settings.enableAutoUpdate = enableAutoUpdate;
+        this.settings.timeUpdate = timeUpdate;
+        if (enableAutoUpdate) {
+            this.startAutoUpdate();
+        } else {
+            this.stopAutoUpdate();
+        }
+    }
+
+    startAutoUpdate() {
+        this.stopAutoUpdate(); // 先停止現有的自動更新（如果有的話）
+        this.autoUpdateInterval = setInterval(async () => {
+            await this.update();
+            console.log(`auto update ${this.settings.timeUpdate} s`);
+        }, this.settings.timeUpdate * 1000);
+    }
+
+    stopAutoUpdate() {
+        if (this.autoUpdateInterval !== null) {
+            clearInterval(this.autoUpdateInterval);
+            this.autoUpdateInterval = null;
+        }
+    }
+
+    async update() {
+        const container = this.containerEl.children[1];
+        container.empty();
+        this.buildTagsButton();
+        this.buildSearchBar();
+        this.buildTableFileContainTag(this.tagNowSearch);
+    }
+
+    getTags(): string[] {
         const tags = new Set<string>();
         const files = this.app.vault.getMarkdownFiles();
 
@@ -89,67 +278,11 @@ class HomepageView extends ItemView {
                 new Notice(`無法找到 ${file.path} 的緩存`);
             }
         }
-        return Array.from(tags).sort();
-    }
 
-    // 檔案中包含特定標籤的表格
-    buildTableFileContainTag(tag: string) {
-        const container = this.containerEl.children[1];
-
-        // 移除舊的表格和相關元素
-        const oldTable = container.querySelector('table');
-        if (oldTable) oldTable.remove();
-        const oldHeader = container.querySelector('#title');
-        if (oldHeader) oldHeader.remove();
-
-        if (tag === '') {
-            new Notice('請輸入標籤');
-            return;
-        }
-
-        const Files = this.getFilesFromTag(tag);
-        const header = container.createEl('div', { attr: { id: 'title' } });
-        header.innerHTML = `<span class="tag-title">tags: [${tag}]</span> <span class="file-count">${Files.length} 個檔案</span>`;
-
-        if (Files.length === 0) {
-            new Notice(`沒有找到包含標籤 #${tag} 的文件。`);
-        } else {
-            const table = container.createEl('table');
-            const thead = table.createEl('thead');
-            const tbody = table.createEl('tbody');
-            const myheader = ['檔案名稱', '創建時間', '描述'];
-
-            const headerRow = thead.createEl('tr');
-            myheader.forEach(header => {
-                headerRow.createEl('th', { text: header });
-            });
-
-            Files.forEach(file => {
-                const cache = this.app.metadataCache.getFileCache(file);
-                const row = tbody.createEl('tr');
-                
-                // 創建一個包含檔案連結的單元格
-                const linkCell = row.createEl('td');
-                const link = linkCell.createEl('a', {
-                    text: file.basename,
-                    cls: 'internal-link my-link',
-                    attr: {
-                        'data-href': file.path,
-                        href: file.path
-                    }
-                });
-                
-                // 添加點擊事件處理器
-                link.addEventListener('click', (event) => {
-                    event.preventDefault();
-                    this.app.workspace.openLinkText(file.path, '', false);
-                });
-
-                row.createEl('td', { text: cache?.frontmatter?.date || '無日期' });
-                row.createEl('td', { text: cache?.frontmatter?.desc || '無描述' });
-            });
-        }
-        this.updateFileCount(Files.length);
+        // 根據 tags 的 length 排序
+        return Array.from(tags).sort((a, b) => {
+            return a.length - b.length;
+        });
     }
 
     getFilesFromTag(tag: string): TFile[] {
@@ -162,28 +295,107 @@ class HomepageView extends ItemView {
         return result;
     }
 
-    buildTagsButton() {
+    buildTagsButton(enableNotice: boolean = false) {
         const container = this.containerEl.children[1];
-        const tags = this.getAllTags();
+        const tags = this.getTags();
+
         if (tags.length > 0) {
-            new Notice(`已加載 ${tags.length} 個標籤`);
-            container.createEl('h1', { text: `總共有 ${tags.length} 個 tags` });
+            if (enableNotice) {
+                new Notice(`已加載 ${tags.length} 個標籤`);
+            }
             const tagContainer = container.createEl('div', { cls: 'tag-container' });
+            tagContainer.style.fontSize = `${this.settings.tagButtonFontSize}px`;
             tags.forEach(tag => {
                 const button = tagContainer.createEl('button', { text: `#${tag}`, cls: 'tag-button' });
-                button.onclick = () => this.buildTableFileContainTag(tag);
+                button.style.fontSize = `${this.settings.tagButtonFontSize}px`;
+                button.onclick = () => {
+                    this.tagNowSearch = tag;
+                    this.buildTableFileContainTag(tag);
+                };
             });
+            tagContainer.createEl('span', { text: `${tags.length} 項 tags` });
         } else {
-            new Notice('沒有找到任何標籤');
+            if (enableNotice) {
+                new Notice('沒有找到任何標籤');
+            }
             container.createEl('p', { text: '沒有找到任何標籤' });
         }
+    }
+
+    buildTableFileContainTag(tag: string, enableNotice: boolean = false) {
+        const container = this.containerEl.children[1];
+
+        // 移除舊的表格和相關元素
+        const oldTable = container.querySelector('table');
+        if (oldTable) oldTable.remove();
+        const oldHeader = container.querySelector('#title');
+        if (oldHeader) oldHeader.remove();
+
+        if (tag === '') {
+            if (enableNotice) {
+                new Notice('請輸入標籤');
+            }
+            return;
+        }
+
+        let Files = this.getFilesFromTag(tag);
+        if (this.sortAsc) {
+            // 默認是倒序
+            Files.reverse();
+        }
+        const header = container.createEl('div', { attr: { id: 'title' } });
+        header.innerHTML = `<span class="tag-title">#${tag}</span> <span class="file-count">${Files.length} 個檔案</span>`;
+
+        if (Files.length === 0) {
+            if (enableNotice) {
+                new Notice(`沒有找到包含標籤 #${tag} 的文件。`);
+            }
+        } else {
+            const table = container.createEl('table');
+            table.style.fontSize = `${this.settings.tableFontSize}px`;
+
+            const thead = table.createEl('thead');
+            const tbody = table.createEl('tbody');
+
+            const headerRow = thead.createEl('tr');
+            for (let i = 0; i <= this.settings.myFrontmatter.length; i++) {
+                headerRow.createEl('th', { text: this.settings.myFrontmatterKey[i] || 'null' });
+            }
+
+            Files.forEach(file => {
+                const cache = this.app.metadataCache.getFileCache(file);
+                const row = tbody.createEl('tr');
+
+                // 創建一個包含檔案連結的單元格
+                const linkCell = row.createEl('td');
+                const link = linkCell.createEl('a', {
+                    text: file.basename,
+                    cls: 'internal-link',
+                    attr: {
+                        'data-href': file.path,
+                        href: file.path
+                    }
+                });
+
+                // 添加點擊事件處理器
+                link.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    this.app.workspace.openLinkText(file.path, '', false);
+                });
+                for (let i = 0; i < this.settings.myFrontmatter.length; i++) {
+                    row.createEl('td', { text: cache?.frontmatter?.[this.settings.myFrontmatter[i]] || 'null' });
+                }
+                // row.createEl('td', { text: cache?.frontmatter?.date || '無日期' });
+                // row.createEl('td', { text: cache?.frontmatter?.desc || '無描述' });
+            });
+        }
+        this.updateFileCount(Files.length);
     }
 
     buildSearchBar() {
         // data
         let totalFilesCount = this.app.vault.getMarkdownFiles().length;
         let currentFilesCount = 0;
-        let asc = true;
 
         // elements
         const container = this.containerEl.children[1];
@@ -196,10 +408,11 @@ class HomepageView extends ItemView {
         sortSelect.createEl('option', { value: '', text: '不排序' });
 
         const reverseSortCheckbox = sortDiv.createEl('input', { type: 'checkbox', attr: { id: 'reverse-sort' } });
-        reverseSortCheckbox.checked = !asc;
+        reverseSortCheckbox.checked = !this.sortAsc;
         reverseSortCheckbox.onclick = () => {
-            asc = !asc;
-            reverseSortCheckbox.checked = asc;
+            this.sortAsc = !this.sortAsc;
+            reverseSortCheckbox.checked = !this.sortAsc;
+            this.buildTableFileContainTag(this.tagNowSearch);
         }
         sortDiv.createEl('label', { text: '倒序', attr: { for: 'reverse-sort' } });
 
@@ -217,7 +430,8 @@ class HomepageView extends ItemView {
         // searchInput 使用者 enter 事件
         searchInput.addEventListener('keydown', (event) => {
             if (event.key === 'Enter') {
-                this.buildTableFileContainTag(searchInput.value);
+                this.tagNowSearch = searchInput.value;
+                this.buildTableFileContainTag(searchInput.value, true);
             }
         });
 
@@ -240,3 +454,7 @@ class HomepageView extends ItemView {
         return iconEl;
     }
 }
+
+
+
+

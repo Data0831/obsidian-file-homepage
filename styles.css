@@ -61,7 +61,7 @@ table {
 th, td {
     padding: 12px 15px;
     text-align: left;
-    font-size: 18px;
+    /* font-size: var(--table-font-size); 已經在 main.ts 設定 */
 }
 
 th {
@@ -103,8 +103,9 @@ tr {
 
 .tag-title{
     font-size: 1.2em;
-    font-weight: bold;
-    margin-right: 10px;
+    font-weight: 500;
+    margin: 0 10px;
+    color: #5A81F0;
 }
 
 .tag-button {
@@ -115,8 +116,6 @@ tr {
     padding: 8px 12px;
     border-radius: 18px !important;
     cursor: pointer;
-    /* transition: background-color 0.3s ease; */
-    /* 去除陰影 */
     box-shadow: none !important;
 }
 
@@ -129,6 +128,11 @@ tr {
     text-decoration: none;
 }
 
-.internal-link:hover {
-    text-decoration: underline;
+/* .tag-container, .tag-container button{
+    font-size: 16px;
+} */
+
+.tag-container span{
+    margin-left: 10px;
+    color: #5A81F0;
 }

@@ -11,6 +11,13 @@ This plugin allows you to search file by tags.
 - tag button
 - tag search bar
 
-## 可以改進的地方
-- 檔案夾搜索
-- 使用者自訂 table 顯示的 frontmatter
+## 使用方法
+- Open Homepage 命令打開首頁
+- update-homepage 命令更新資料
+  - 可以自行設定更新頻率
+
+## 設定
+![alt text](image-1.png)
+- 設定頁面
+  - frontmatter: 選擇要顯示的欄位，這個欄位需要 md 檔在 frontmatter 有設定，不然會顯示 null
+  - frontmatterkey: 對應 frontmatter，顯示在表格的欄位，第一項默認是檔案
