@@ -376,7 +376,7 @@ class HomepageView extends ItemView {
 
         files = this.fileSort(files);
         const header = container.createEl('div', { attr: { id: 'title' } });
-        header.innerHTML = `<span class="value-title"> ${this.searchValue} </span> <span class="file-count">${files.length} 個檔案</span>`;
+        header.innerHTML = `<span class="value-title"> ${(this.searchValue.length > 0) ? this.searchValue : 'no-tags'} </span> <span class="file-count">${files.length} 個檔案</span>`;
 
         if (files.length === 0) {
             if (enableNotice) {
