@@ -101,7 +101,8 @@ tr {
     transition: all 0.3s ease;
 }
 
-.tag-title{
+/* 使用者選擇值 */
+.value-title{
     font-size: 1.2em;
     font-weight: 500;
     margin: 0 10px;
@@ -120,6 +121,22 @@ tr {
 }
 
 .tag-button:hover {
+    background-color: #DBDFF8 !important;
+}
+
+.no-tag-button {
+    background-color: #f9eaea !important;
+    color: #f0aa5a !important;
+    border: none !important;
+    margin: 3px;
+    margin-left: 10px;
+    padding: 8px 12px;
+    border-radius: 18px !important;
+    cursor: pointer;
+    box-shadow: none !important;
+}
+
+.no-tag-button:hover {
     background-color: #DBDFF8 !important;
 }
 

@@ -13,6 +13,7 @@ class MyPluginSettings {
 
     myFrontmatter: string[] = [];
     myFrontmatterKey: string[] = [];
+
 }
 
 class MyPluginSettingTab extends PluginSettingTab {
@@ -178,8 +179,10 @@ export default class Homepage extends Plugin {
 
 class HomepageView extends ItemView {
     private autoUpdateInterval: NodeJS.Timeout | null = null;
-    public tagNowSearch: string = '';
+    private searchValue: string = '';
+    private sortFrontmatter: string = "default";
     private sortAsc: boolean = true;
+
     settings: MyPluginSettings;
 
     constructor(leaf: WorkspaceLeaf, settings: MyPluginSettings) {
@@ -247,7 +250,7 @@ class HomepageView extends ItemView {
         container.empty();
         this.buildTagsButton();
         this.buildSearchBar();
-        this.buildTableFileContainTag(this.tagNowSearch);
+        this.buildTagTable(this.searchValue);
     }
 
     getTags(): string[] {
@@ -298,19 +301,20 @@ class HomepageView extends ItemView {
     buildTagsButton(enableNotice: boolean = false) {
         const container = this.containerEl.children[1];
         const tags = this.getTags();
+        const tagContainer = container.createEl('div', { cls: 'tag-container' });
+        tagContainer.style.fontSize = `${this.settings.tagButtonFontSize}px`;
 
         if (tags.length > 0) {
             if (enableNotice) {
                 new Notice(`已加載 ${tags.length} 個標籤`);
             }
-            const tagContainer = container.createEl('div', { cls: 'tag-container' });
-            tagContainer.style.fontSize = `${this.settings.tagButtonFontSize}px`;
+
             tags.forEach(tag => {
                 const button = tagContainer.createEl('button', { text: `#${tag}`, cls: 'tag-button' });
                 button.style.fontSize = `${this.settings.tagButtonFontSize}px`;
                 button.onclick = () => {
-                    this.tagNowSearch = tag;
-                    this.buildTableFileContainTag(tag);
+                    this.searchValue = tag;
+                    this.buildTagTable(tag);
                 };
             });
             tagContainer.createEl('span', { text: `${tags.length} 項 tags` });
@@ -318,11 +322,50 @@ class HomepageView extends ItemView {
             if (enableNotice) {
                 new Notice('沒有找到任何標籤');
             }
-            container.createEl('p', { text: '沒有找到任何標籤' });
         }
+        const noTagButton = tagContainer.createEl('button', { text: `#no-tags`, cls: 'no-tag-button' });
+        noTagButton.style.fontSize = `${this.settings.tagButtonFontSize}px`;
+        noTagButton.onclick = () => {
+            this.searchValue = '';
+            this.buildNoTagTable();
+        };
     }
 
-    buildTableFileContainTag(tag: string, enableNotice: boolean = false) {
+    buildTagTable(tag: string, enableNotice: boolean = false) {
+        if (tag === '') {
+            if (enableNotice) {
+                new Notice('請輸入標籤');
+            }
+            return;
+        }
+        this.buildTableFromFiles(this.getFilesFromTag(tag), enableNotice);
+    }
+
+    buildNoTagTable(enableNotice: boolean = false) {
+        const files = this.app.vault.getMarkdownFiles();
+        const noTagFiles = files.filter(file => {
+            const cache = this.app.metadataCache.getFileCache(file);
+            return cache?.frontmatter?.tags?.length === 0 || !cache?.frontmatter?.tags;
+        });
+        this.buildTableFromFiles(noTagFiles, enableNotice);
+    }
+
+    fileSort(files: TFile[]) {
+
+
+        if (this.sortFrontmatter === "default" && !this.settings.myFrontmatter.contains(this.sortFrontmatter)) {
+            return (this.sortAsc) ? files.reverse() : files;
+        }
+
+        files.sort((a, b) => {
+            const aValue = this.app.metadataCache.getFileCache(a)?.frontmatter?.[this.sortFrontmatter];
+            const bValue = this.app.metadataCache.getFileCache(b)?.frontmatter?.[this.sortFrontmatter];
+            return (aValue || '').localeCompare(bValue || '');
+        });
+        return (this.sortAsc) ? files : files.reverse();
+    }
+
+    buildTableFromFiles(files: TFile[], enableNotice: boolean = false) {
         const container = this.containerEl.children[1];
 
         // 移除舊的表格和相關元素
@@ -331,24 +374,13 @@ class HomepageView extends ItemView {
         const oldHeader = container.querySelector('#title');
         if (oldHeader) oldHeader.remove();
 
-        if (tag === '') {
-            if (enableNotice) {
-                new Notice('請輸入標籤');
-            }
-            return;
-        }
-
-        let Files = this.getFilesFromTag(tag);
-        if (this.sortAsc) {
-            // 默認是倒序
-            Files.reverse();
-        }
+        files = this.fileSort(files);
         const header = container.createEl('div', { attr: { id: 'title' } });
-        header.innerHTML = `<span class="tag-title">#${tag}</span> <span class="file-count">${Files.length} 個檔案</span>`;
+        header.innerHTML = `<span class="value-title"> ${this.searchValue} </span> <span class="file-count">${files.length} 個檔案</span>`;
 
-        if (Files.length === 0) {
+        if (files.length === 0) {
             if (enableNotice) {
-                new Notice(`沒有找到包含標籤 #${tag} 的文件。`);
+                new Notice(`沒有找到 ${this.searchValue} 文件。`);
             }
         } else {
             const table = container.createEl('table');
@@ -362,7 +394,7 @@ class HomepageView extends ItemView {
                 headerRow.createEl('th', { text: this.settings.myFrontmatterKey[i] || 'null' });
             }
 
-            Files.forEach(file => {
+            files.forEach(file => {
                 const cache = this.app.metadataCache.getFileCache(file);
                 const row = tbody.createEl('tr');
 
@@ -385,11 +417,9 @@ class HomepageView extends ItemView {
                 for (let i = 0; i < this.settings.myFrontmatter.length; i++) {
                     row.createEl('td', { text: cache?.frontmatter?.[this.settings.myFrontmatter[i]] || 'null' });
                 }
-                // row.createEl('td', { text: cache?.frontmatter?.date || '無日期' });
-                // row.createEl('td', { text: cache?.frontmatter?.desc || '無描述' });
             });
         }
-        this.updateFileCount(Files.length);
+        this.updateFileCount(files.length);
     }
 
     buildSearchBar() {
@@ -403,19 +433,31 @@ class HomepageView extends ItemView {
         const countDiv = floatingBar.createEl('span');
         countDiv.innerHTML = `<span id="file-count">${currentFilesCount}</span> / ${totalFilesCount}`;
 
+        // sort
         const sortDiv = floatingBar.createEl('div', { cls: 'sort-container' });
-        const sortSelect = sortDiv.createEl('select', { attr: { id: 'sort-select' } });
-        sortSelect.createEl('option', { value: '', text: '不排序' });
 
+        // sort select
+        const sortSelect = sortDiv.createEl('select', { attr: { id: 'sort-select' } });
+        sortSelect.createEl('option', { value: 'default', text: '不排序' });
+        this.settings.myFrontmatter.forEach(frontmatter => {
+            sortSelect.createEl('option', { value: frontmatter, text: frontmatter });
+        });
+        sortSelect.onchange = () => {
+            this.sortFrontmatter = sortSelect.value;
+            this.buildTagTable(this.searchValue);
+        }
+
+        // sort checkbox
         const reverseSortCheckbox = sortDiv.createEl('input', { type: 'checkbox', attr: { id: 'reverse-sort' } });
         reverseSortCheckbox.checked = !this.sortAsc;
         reverseSortCheckbox.onclick = () => {
             this.sortAsc = !this.sortAsc;
             reverseSortCheckbox.checked = !this.sortAsc;
-            this.buildTableFileContainTag(this.tagNowSearch);
+            this.buildTagTable(this.searchValue);
         }
         sortDiv.createEl('label', { text: '倒序', attr: { for: 'reverse-sort' } });
 
+        // search
         const searchContainer = floatingBar.createEl('div', { cls: 'search-container' });
         const searchIcon = searchContainer.createEl('span', { cls: 'search-icon' });
         this.addIcon('search', searchIcon); // 使用 Obsidian 內置的搜索圖標
@@ -430,8 +472,8 @@ class HomepageView extends ItemView {
         // searchInput 使用者 enter 事件
         searchInput.addEventListener('keydown', (event) => {
             if (event.key === 'Enter') {
-                this.tagNowSearch = searchInput.value;
-                this.buildTableFileContainTag(searchInput.value, true);
+                this.searchValue = searchInput.value;
+                this.buildTagTable(searchInput.value, true);
             }
         });
 
@@ -454,6 +496,7 @@ class HomepageView extends ItemView {
         return iconEl;
     }
 }
+
 
 
 
