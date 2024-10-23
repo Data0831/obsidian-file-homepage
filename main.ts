@@ -1,104 +1,6 @@
-import { App, Plugin, WorkspaceLeaf, ItemView, ViewStateResult, Notice, TFile, setIcon, PluginSettingTab, Setting } from 'obsidian';
-
+import { Plugin, WorkspaceLeaf, ItemView, Notice, TFile, setIcon } from 'obsidian';
+import { MyPluginSettings, MyPluginSettingTab } from './src/setting';
 export const VIEW_TYPE_HOMEPAGE = "homepage-view";
-
-class MyPluginSettings {
-    autoUpdateOnChange: boolean = false;
-    enableAutoUpdate: boolean = false;
-    timeUpdate: number = 20;
-
-    enableDarkMode: boolean = false;
-    tableFontSize: number = 18;
-    tagButtonFontSize: number = 16;
-
-    myFrontmatter: string[] = [];
-    myFrontmatterKey: string[] = [];
-
-}
-
-class MyPluginSettingTab extends PluginSettingTab {
-    plugin: Homepage;
-
-    constructor(app: App, plugin: Homepage) {
-        super(app, plugin);
-        this.plugin = plugin;
-    }
-
-    display() {
-        const { containerEl } = this;
-
-        containerEl.empty();
-        containerEl.createEl('h2', { text: 'Tag search page plugin settings' });
-
-        new Setting(containerEl)
-            .setName('黑暗模式')
-            .setDesc('預設是亮色模式，目前默認無法使用')
-            .addToggle(toggle =>
-                toggle
-                    .setValue(this.plugin.settings.enableDarkMode)
-                    .onChange(async (value) => {
-                        // 目前默認無法使用 todo: 增加 dark mode
-                        this.plugin.settings.enableDarkMode = false;
-                        await this.plugin.saveSettings();
-                    }));
-
-        new Setting(containerEl)
-            .setName('啟用自動更新頁面')
-            .setDesc('預設是開啟')
-            .addToggle(toggle =>
-                toggle
-                    .setValue(this.plugin.settings.enableAutoUpdate)
-                    .onChange(async (value) => {
-                        this.plugin.settings.enableAutoUpdate = value;
-                        this.plugin.settings.autoUpdateOnChange = true;
-                        await this.plugin.saveSettings();
-                    }));
-
-        new Setting(containerEl)
-            .setName('更新時間')
-            .setDesc('預設是 20 秒，最少 2 秒，要先啟用自動更新才有效')
-            .addText(text => text.setValue(this.plugin.settings.timeUpdate.toString()).onChange(async (value) => {
-                let intValue = parseInt(value);
-                if (intValue >= 2) {
-                    this.plugin.settings.timeUpdate = intValue;
-                    this.plugin.settings.autoUpdateOnChange = true;
-                    await this.plugin.saveSettings();
-                }
-            }));
-
-        new Setting(containerEl)
-            .setName('表格字體大小')
-            .setDesc('預設是 18px')
-            .addText(text => text.setValue(this.plugin.settings.tableFontSize.toString()).onChange(async (value) => {
-                this.plugin.settings.tableFontSize = parseInt(value);
-                await this.plugin.saveSettings();
-            }));
-
-        new Setting(containerEl)
-            .setName('按鈕字體大小')
-            .setDesc('預設是 16px')
-            .addText(text => text.setValue(this.plugin.settings.tagButtonFontSize.toString()).onChange(async (value) => {
-                this.plugin.settings.tagButtonFontSize = parseInt(value);
-                await this.plugin.saveSettings();
-            }));
-
-        new Setting(containerEl)
-            .setName('frontmatterKey')
-            .setDesc('table 的 header，如果沒有設定默認使用 null 請用逗號隔開如: 日期,描述')
-            .addText(text => text.setValue(this.plugin.settings.myFrontmatterKey.join(',')).onChange(async (value) => {
-                this.plugin.settings.myFrontmatterKey = value.split(',');
-                await this.plugin.saveSettings();
-            }));
-
-        new Setting(containerEl)
-            .setName('frontmatter')
-            .setDesc('table 的資料key，請用逗號隔開如: date,desc')
-            .addText(text => text.setValue(this.plugin.settings.myFrontmatter.join(',')).onChange(async (value) => {
-                this.plugin.settings.myFrontmatter = value.split(',');
-                await this.plugin.saveSettings();
-            }));
-    }
-}
 
 export default class Homepage extends Plugin {
     settings: MyPluginSettings;
@@ -147,8 +49,16 @@ export default class Homepage extends Plugin {
 
     async saveSettings() {
         await this.saveData(this.settings);
+
+        // 如果開啟自動更新，則更新所有首頁視圖
         if (this.settings.autoUpdateOnChange) {
-            this.updateAllHomepageViews();
+            const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_HOMEPAGE);
+            leaves.forEach(leaf => {
+                const view = leaf.view as HomepageView;
+                if (view) {
+                    view.doAutoUpdate(this.settings.enableAutoUpdate, this.settings.timeUpdate);
+                }
+            });
         }
     }
 
@@ -164,16 +74,6 @@ export default class Homepage extends Plugin {
             });
         }
         workspace.revealLeaf(leaf);
-    }
-
-    updateAllHomepageViews() {
-        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_HOMEPAGE);
-        leaves.forEach(leaf => {
-            const view = leaf.view as HomepageView;
-            if (view) {
-                view.updateAutoUpdateStatus(this.settings.enableAutoUpdate, this.settings.timeUpdate);
-            }
-        });
     }
 }
 
@@ -206,51 +106,42 @@ class HomepageView extends ItemView {
         const container = this.containerEl.children[1];
         container.empty();
 
-        this.buildTagsButton(true);
+        this.buildButton(true);
         this.buildSearchBar();
 
         // 當頁面打開時，啟動自動更新
         if (this.settings.enableAutoUpdate) {
-            this.startAutoUpdate();
+            this.doAutoUpdate(this.settings.enableAutoUpdate);
         }
     }
 
     async onClose() {
         // 當頁面關閉時，停止自動更新
-        this.stopAutoUpdate();
+        this.doAutoUpdate(false);
     }
 
-    updateAutoUpdateStatus(enableAutoUpdate: boolean, timeUpdate: number) {
+    
+
+    doAutoUpdate(enableAutoUpdate = false, timeUpdate = this.settings.timeUpdate) {
         this.settings.enableAutoUpdate = enableAutoUpdate;
         this.settings.timeUpdate = timeUpdate;
+
+        // 開啟 或 時間變化
         if (enableAutoUpdate) {
-            this.startAutoUpdate();
+            if (this.autoUpdateInterval !== null) {
+                clearInterval(this.autoUpdateInterval);
+                this.autoUpdateInterval = null;
+            }
+            this.autoUpdateInterval = setInterval(async () => {
+                await this.update();
+                console.log(`auto update ${this.settings.timeUpdate} s`);
+            }, this.settings.timeUpdate * 1000);
         } else {
-            this.stopAutoUpdate();
+            if (this.autoUpdateInterval !== null) {
+                clearInterval(this.autoUpdateInterval);
+                this.autoUpdateInterval = null;
+            }
         }
-    }
-
-    startAutoUpdate() {
-        this.stopAutoUpdate(); // 先停止現有的自動更新（如果有的話）
-        this.autoUpdateInterval = setInterval(async () => {
-            await this.update();
-            console.log(`auto update ${this.settings.timeUpdate} s`);
-        }, this.settings.timeUpdate * 1000);
-    }
-
-    stopAutoUpdate() {
-        if (this.autoUpdateInterval !== null) {
-            clearInterval(this.autoUpdateInterval);
-            this.autoUpdateInterval = null;
-        }
-    }
-
-    async update() {
-        const container = this.containerEl.children[1];
-        container.empty();
-        this.buildTagsButton();
-        this.buildSearchBar();
-        this.buildTagTable(this.searchValue);
     }
 
     getTags(): string[] {
@@ -298,8 +189,24 @@ class HomepageView extends ItemView {
         return result;
     }
 
-    buildTagsButton(enableNotice: boolean = false) {
+    async update() {
         const container = this.containerEl.children[1];
+        container.empty();
+        this.buildButton();
+        this.buildSearchBar();
+        this.buildTagTable(this.searchValue);
+    }
+
+    buildTabs() {
+        const container = this.containerEl.children[1];
+        this.buildButton();
+        this.buildSearchBar();
+        this.buildTagTable(this.searchValue);
+    }
+
+    buildButton(enableNotice: boolean = false) {
+        const container = this.containerEl.children[1];
+        console.log(this.containerEl.children);
         const tags = this.getTags();
         const tagContainer = container.createEl('div', { cls: 'tag-container' });
         tagContainer.style.fontSize = `${this.settings.tagButtonFontSize}px`;
