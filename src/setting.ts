@@ -3,16 +3,16 @@ import Homepage from '../main';
 
 export class MyPluginSettings {
     autoUpdateOnChange: boolean = false;
-    enableAutoUpdate: boolean = false;
+    allowAutoUpdate: boolean = false;
     timeUpdate: number = 20;
 
     enableDarkMode: boolean = false;
     tableFontSize: number = 18;
-    tagButtonFontSize: number = 16;
+    fileButtonFontSize: number = 16;
 
     myFrontmatter: string[] = [];
     myFrontmatterKey: string[] = [];
-
+    myCustomTabsButton: string[] = [];
 }
 
 export class MyPluginSettingTab extends PluginSettingTab {
@@ -46,9 +46,9 @@ export class MyPluginSettingTab extends PluginSettingTab {
             .setDesc('預設是開啟')
             .addToggle(toggle =>
                 toggle
-                    .setValue(this.plugin.settings.enableAutoUpdate)
+                    .setValue(this.plugin.settings.allowAutoUpdate)
                     .onChange(async (value) => {
-                        this.plugin.settings.enableAutoUpdate = value;
+                        this.plugin.settings.allowAutoUpdate = value;
                         this.plugin.settings.autoUpdateOnChange = true;
                         await this.plugin.saveSettings();
                     }));
@@ -76,8 +76,8 @@ export class MyPluginSettingTab extends PluginSettingTab {
         new Setting(containerEl)
             .setName('按鈕字體大小')
             .setDesc('預設是 16px')
-            .addText(text => text.setValue(this.plugin.settings.tagButtonFontSize.toString()).onChange(async (value) => {
-                this.plugin.settings.tagButtonFontSize = parseInt(value);
+            .addText(text => text.setValue(this.plugin.settings.fileButtonFontSize.toString()).onChange(async (value) => {
+                this.plugin.settings.fileButtonFontSize = parseInt(value);
                 await this.plugin.saveSettings();
             }));
 
@@ -96,5 +96,19 @@ export class MyPluginSettingTab extends PluginSettingTab {
                 this.plugin.settings.myFrontmatter = value.split(',');
                 await this.plugin.saveSettings();
             }));
+
+        new Setting(containerEl)
+            .setName('custom tabs')
+            .setDesc('tabs 資料，請用逗號隔開如: folder,#tag')
+            .addTextArea(text => text.setValue(this.plugin.settings.myCustomTabsButton.join(',\n'))
+                .setPlaceholder('folder,#tag')
+                .onChange(async (value) => {
+                    this.plugin.settings.myCustomTabsButton = value.split(',').map(item => {
+                        item = item.trim();
+                        item = item.replace(/^"|"$/g, '');
+                        return item;
+                    });
+                    await this.plugin.saveSettings();
+                })).setClass('custom-textarea');
     }
 }

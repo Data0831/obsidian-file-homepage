@@ -1,4 +1,5 @@
-@REM 複製 main.js 到 E:\myVault\Data0831note\.obsidian\plugins\tag-search-page
-xcopy main.js E:\myVault\Data0831note\.obsidian\plugins\tag-search-page /s /e /y
-xcopy styles.css E:\myVault\Data0831note\.obsidian\plugins\tag-search-page /s /e /y
-xcopy manifest.json E:\myVault\Data0831note\.obsidian\plugins\tag-search-page /s /e /y
+@REM 複製 main.js 到 F:\Data0831\.obsidian\plugins\File-Homepage
+set mypath=F:\Data0831\.obsidian\plugins\File-Homepage
+xcopy main.js %mypath% /s /e /y
+xcopy styles.css %mypath% /s /e /y
+xcopy manifest.json %mypath% /s /e /y

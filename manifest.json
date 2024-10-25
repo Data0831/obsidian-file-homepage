@@ -1,9 +1,9 @@
 {
-	"id": "tag-search-page-Data0831",
-	"name": "Data0831's Tag Search Page",
-	"version": "0.0.1",
+	"id": "file-homepage-Data0831",
+	"name": "Data0831's File Homepage",
+	"version": "0.0.2",
 	"minAppVersion": "1.7.4",
-	"description": "This plugin allows you to search file by tags.",
+	"description": "This plugin allows you to search file by tags or folder.",
 	"author": "Data0831",
 	"authorUrl": "https://github.com/data0831",
 	"fundingUrl": "https://github.com/data0831",
