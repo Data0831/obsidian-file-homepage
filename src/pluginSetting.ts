@@ -11,7 +11,7 @@ export class MyPluginSettings {
     fileButtonFontSize: number = 16;
 
     myFrontmatter: string[] = [];
-    myFrontmatterKey: string[] = [];
+    myTableHeader: string[] = [];
     myCustomTabsButton: string[] = [];
 }
 
@@ -82,10 +82,10 @@ export class MyPluginSettingTab extends PluginSettingTab {
             }));
 
         new Setting(containerEl)
-            .setName('frontmatterKey')
-            .setDesc('table 的 header，如果沒有設定默認使用 null 請用逗號隔開如: 日期,描述')
-            .addText(text => text.setValue(this.plugin.settings.myFrontmatterKey.join(',')).onChange(async (value) => {
-                this.plugin.settings.myFrontmatterKey = value.split(',');
+            .setName('myTableHeader')
+            .setDesc('table 的 header，請用逗號隔開如: 日期,描述')
+            .addText(text => text.setValue(this.plugin.settings.myTableHeader.join(',')).onChange(async (value) => {
+                this.plugin.settings.myTableHeader = value.split(',');
                 await this.plugin.saveSettings();
             }));
 

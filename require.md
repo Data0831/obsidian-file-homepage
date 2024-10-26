@@ -4,12 +4,35 @@
     - 開啟自動更新後，當更新了插件，可能需要重新啟動 Obsidian，不然之前的 loop 會繼續跑。
 
 # 可以增加功能
-- tag 後面顯示有幾個文件? 性能問題？
-- 設定頁面
-    - 設定 dark、light 模式
-- search
-    - contain search(部分搜尋)、 and、or 類似 sql 的搜尋
-    - 在已選擇的 tag(folder) 中搜尋
+## 文件
 - 顯示其他非 md 文件
 - 搬移文件 或 重命名資料夾
-- frontmatter 編輯模式
+- 根據現在 folder 的位置新增資料夾 
+- file.parentName 可能是一樣的，請用 path 搜尋
+
+## title 右鍵選單
+- 重命名資料夾文件
+- 搬移資料夾文件
+- cusor: pointer
+
+## 其它右鍵選單
+- basename
+- button
+
+## table
+- 勾選欄位，對 table 操作
+
+## language
+- 支援 中文、英文
+
+## tags
+- 其他 md 檔案的 tags 可以跳轉首頁
+- tag 後面顯示有幾個文件? 性能問題？
+
+## 設定頁面
+- 設定 dark、light 模式
+
+## search
+- contain search(部分搜尋)、 and、or 類似 sql 的搜尋
+- 在已選擇的 tag(folder) 中搜尋
+
