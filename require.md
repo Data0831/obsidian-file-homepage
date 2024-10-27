@@ -5,10 +5,16 @@
 
 # 可以增加功能
 ## 文件
+- 快捷鍵打開是在新分頁打開
+- 在還沒 unfoucs 前按下 f3 也能保存
 - 顯示其他非 md 文件
 - 搬移文件 或 重命名資料夾
-- 根據現在 folder 的位置新增資料夾 
-- file.parentName 可能是一樣的，請用 path 搜尋
+- 根據現在 folder 的位置新增資料夾
+- custom 增加要改成 path 增加方式
+- 多個 custom
+- custom 接受單文件
+- 列出 unlinked picture(文件)
+- ctrl hover 顯示
 
 ## title 右鍵選單
 - 重命名資料夾文件
@@ -21,6 +27,7 @@
 
 ## table
 - 勾選欄位，對 table 操作
+- th size 設定
 
 ## language
 - 支援 中文、英文
