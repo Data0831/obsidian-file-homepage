@@ -43,3 +43,4 @@
 - contain search(部分搜尋)、 and、or 類似 sql 的搜尋
 - 在已選擇的 tag(folder) 中搜尋
 
+## 手機支援
