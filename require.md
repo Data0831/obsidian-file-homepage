@@ -32,6 +32,7 @@
 - button
 
 ## table
+- button 排序不只根據 長度，還要根據 abc
 - 勾選欄位，對 table 操作
 - th size 設定
 
