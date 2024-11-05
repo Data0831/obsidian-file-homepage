@@ -18,6 +18,8 @@
 - custom 接受單文件
 - 列出 unlinked picture(文件)
 - ctrl hover 顯示
+- 排列方式 大小寫要區分
+- 取消 auto update 模式，當焦點切換回來，自動更新
 
 ## title 右鍵選單
 - 重命名資料夾文件

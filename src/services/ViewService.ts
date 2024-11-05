@@ -428,6 +428,7 @@ export class ViewService {
     }
 
     private showContextMenu(event: MouseEvent, element: HTMLElement) {
+        //todo: 可參考 obsidian 的 style
         document.querySelector('.context-menu')?.remove();
         const menu = document.createElement('div');
         menu.className = 'context-menu';

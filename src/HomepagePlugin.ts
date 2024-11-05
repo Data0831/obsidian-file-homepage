@@ -54,6 +54,7 @@ export default class HomepagePlugin extends Plugin {
                 if (view) {
                     view.homepageSetting.editMode = !view.homepageSetting.editMode;
                     view.viewService.update();
+                    view.viewService.update();
                 } else {
                     new Notice('首頁視圖未打開');
                 }
@@ -88,4 +89,4 @@ export default class HomepagePlugin extends Plugin {
             });
         }
     }
-} 
+}
