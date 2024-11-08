@@ -49,11 +49,14 @@ export default class HomepagePlugin extends Plugin {
             id: 'switch-mode',
             name: 'Switch Mode (read/write)',
             hotkeys: [{ modifiers: [], key: 'F3' }],
-            callback: () => {
+            callback: async () => {
                 const view = this.getHomepageView();
                 if (view) {
+                    if (document.activeElement instanceof HTMLElement) {
+                        document.activeElement.blur();
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                    }
                     view.homepageSetting.editMode = !view.homepageSetting.editMode;
-                    view.viewService.build();
                     view.viewService.build();
                 } else {
                     new Notice('首頁視圖未打開');

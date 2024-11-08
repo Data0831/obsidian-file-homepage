@@ -27,17 +27,35 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    pad
 }
 
 .Segment-container {
     height: 20%;
+    display: flex;
+    flex-direction: row;
+}
+
+.Segment-container .tabs-button-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 5px;
+    margin: 0 10px 15px 0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.Segment-container .tabs-button-container .selected {
+    background-color: #5A81F0;
+    color: white;
 }
 
 .Segment-container .tabs-button-container .tab-button {
+    margin: 10px 10px;
     width: auto;
     min-width: 80px;
-    margin: 0 10px;
     padding: 8px 15px;
     border: none;
     box-shadow: none;
@@ -49,13 +67,6 @@
     transition: all 0.3s ease;
 }
 
-.Segment-container .tabs-button-container .tab-button:hover {
-    background-color: rgba(90, 129, 240, 0.1);
-    color: #5A81F0;
-    /* color: var(--primary-color); */
-    cursor: pointer;
-}
-
 .Segment-container .tabs-button-container .selected {
     background-color: #5A81F0;
     color: white;
@@ -65,15 +76,10 @@
     background-color: #4A71E0;
 }
 
-.Segment-container .tabs-button-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    padding: 5px;
-    margin-bottom: 15px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+.Segment-container .tabs-button-container .tab-button:hover {
+    background-color: rgba(90, 129, 240, 0.1);
+    color: #5A81F0;
+    cursor: pointer;
 }
 
 .------content {}
@@ -150,9 +156,22 @@
     height: 100%;
 }
 
-#table-title {
+#table-title-line {
     display: flex;
     margin: 10px 0;
+}
+
+#title-label {
+    min-width: 5%;
+    font-size: 1.2em;
+    font-weight: 500;
+    margin: 0 10px;
+    color: #5A81F0;
+}
+
+#title-label:hover {
+    cursor: pointer;
+    background-color: #e9ecef;
 }
 
 .title-setting-container {
@@ -165,9 +184,7 @@
 .------table-container {}
 
 #file-table-container {
-    display: flex;
-    flex-direction: column;
-    padding: 0 4px ;
+    padding: 0 4px;
     height: 80%;
     overflow-y: scroll;
 }
@@ -242,13 +259,8 @@ td:first-child {
 }
 
 
-/* 使用者選擇值 */
-.value-title {
-    font-size: 1.2em;
-    font-weight: 500;
-    margin: 0 10px;
-    color: #5A81F0;
-}
+
+
 
 .file-button {
     background-color: #EAECF9 !important;

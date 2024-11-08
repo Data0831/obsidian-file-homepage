@@ -1,15 +1,8 @@
 # 已知問題
 
-## 資料更新
-    - 開啟自動更新後，當更新了插件，可能需要重新啟動 Obsidian，不然之前的 loop 會繼續跑。
-
 # 可以增加功能
 ## 文件
-- 顯示子資料夾內的文件 (設定)
-- 快捷鍵打開是在新分頁打開
-- 在還沒 unfoucs 前按下 f3 也能保存
-	- 可以試試能不能在 update 前 unfocus
- 	- 主頁面 unfocus 後自動刷新
+
 - 顯示其他非 md 文件
 - 搬移文件 或 重命名資料夾
 - 根據現在 folder 的位置新增資料夾
@@ -33,6 +26,10 @@
 ## 其它右鍵選單
 - basename
 - button
+
+## filebutton
+- class 與 obsidian 的 file button 一樣
+- overflow
 
 ## table
 - button 排序不只根據 長度，還要根據 abc

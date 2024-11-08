@@ -76,59 +76,7 @@ export class ViewService {
         this.buildContent();
     }
 
-    getFileButtonValues(): string[] {
-        const getTags = (): string[] => {
-            const addTagByCache = (cache: CachedMetadata) => {
-                if (cache.frontmatter && cache.frontmatter.tags) {
-                    if (Array.isArray(cache.frontmatter.tags)) {
-                        cache.frontmatter.tags.forEach(tag => tags.add(`#${tag}`));
-                    } else if (typeof cache.frontmatter.tags === 'string') {
-                        tags.add(`#${cache.frontmatter.tags}`);
-                    }
-                }
-            }
-            const tags = new Set<string>();
-            const files = this.view.app.vault.getMarkdownFiles();
-
-            for (const file of files) {
-                const cache = this.view.app.metadataCache.getFileCache(file);
-                if (cache) {
-                    addTagByCache(cache);
-                } else {
-                    new Notice(`無法找到 ${file.path} 的緩存`);
-                }
-            }
-
-            return Array.from(tags).sort((a, b) => {
-                return this.buttonValueSort(a.length, b.length);
-            });
-        }
-
-        const getFoldersPath = (): string[] => {
-            const folders = new Set<string>();
-            const files = this.view.app.vault.getMarkdownFiles();
-            files.forEach(file => {
-                folders.add(file.parent?.path || '');
-            });
-
-            return Array.from(folders).sort((a, b) => {
-                return this.buttonValueSort(a.length, b.length);
-            });
-        }
-
-        if (this.view.homepageSetting.tabSelected === 'tag') {
-            return getTags();
-        } else if (this.view.homepageSetting.tabSelected === 'folder') {
-            return getFoldersPath();
-        } else if (this.view.homepageSetting.tabSelected === 'custom') {
-            return this.view.plugin.settings.myCustomTabsButton;
-        }
-        return [];
-    }
-
-    private buttonValueSort(num1: number, num2: number) {
-        return num1 - num2;
-    }
+    
 
     
 
@@ -139,7 +87,7 @@ export class ViewService {
         const fileButtonContainer = SegmentContainer.createEl('div', { cls: 'file-button-container' });
         fileButtonContainer.style.fontSize = `${this.view.plugin.settings.fileButtonFontSize}px`;
 
-        const fileButtonValues: string[] = this.getFileButtonValues();
+        const fileButtonValues: string[] = this.view.fileService.getFileButtonValues();
 
         if (fileButtonValues.length > 0) {
             fileButtonValues.forEach(value => {
@@ -245,7 +193,7 @@ export class ViewService {
     }
 
     buildTableTitle(tableContainer: HTMLElement) {
-        const tableTitleContainer = tableContainer.createEl('div', { attr: { id: 'table-title' } });
+        const lineContainer = tableContainer.createEl('div', { attr: { id: 'table-title-line' } });
 
         const getTitle = () => {
             if (this.view.homepageSetting.searchValue === this.view.homepageSetting.noTagValue)
@@ -254,15 +202,13 @@ export class ViewService {
         };
 
         let valueTitle = getTitle();
-        const title = tableTitleContainer.createEl('span');
-        title.innerHTML = `<span class="value-title"> ${valueTitle} </span>`;
-
-        tableTitleContainer.addEventListener('contextmenu', (event) => {
+        const title = lineContainer.createEl('span', { attr: { id: 'title-label' }, text: valueTitle });
+        title.addEventListener('contextmenu', (event) => {
             event.preventDefault();
-            this.showContextMenu(event, tableTitleContainer);
+            this.showContextMenu(event, lineContainer);
         });
 
-        const settingContainer = tableTitleContainer.createEl('span', { cls: 'title-setting-container' });
+        const settingContainer = lineContainer.createEl('span', { cls: 'title-setting-container' });
 
         const showSubFolderCheckbox = settingContainer.createEl('input', {
             type: 'checkbox',
@@ -271,7 +217,7 @@ export class ViewService {
         showSubFolderCheckbox.checked = this.view.homepageSetting.showSubFolder;
         showSubFolderCheckbox.onclick = () => {
             this.view.homepageSetting.showSubFolder = showSubFolderCheckbox.checked;
-            this.buildTable();
+            this.build();
         }
         settingContainer.createEl('label', { text: '顯示子資料夾內容', attr: { for: 'show-sub-folder' } });
     }

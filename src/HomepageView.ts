@@ -17,7 +17,15 @@ export class HomepageView extends ItemView {
         this.viewService = new ViewService(this);
         this.homepageSetting = new HomepageSetting();
         this.homepageSetting.showSubFolder = this.plugin.settings.showSubFolder;
-        this.fileService = new FileService(this.app, this.homepageSetting);
+        this.fileService = new FileService(this);
+
+        this.registerEvent(
+            this.app.workspace.on('active-leaf-change', (leaf) => {
+                if (leaf && leaf.view instanceof ItemView && leaf.view === this) {
+                    this.onViewActivate();
+                }
+            })
+        );
     }
 
     getViewType(): string {
@@ -31,7 +39,10 @@ export class HomepageView extends ItemView {
     async onOpen() {
         const container = this.containerEl.children[1];
         container.empty();
-        this.viewService.buildSegment();
-        this.viewService.buildContent();
+        this.viewService.build();
     }
-} 
+
+    private async onViewActivate() {
+        await this.viewService.build();
+    }
+}
