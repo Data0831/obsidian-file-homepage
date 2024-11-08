@@ -3,7 +3,7 @@ import { Notice, setIcon, TFile, CachedMetadata } from 'obsidian';
 import * as YAML from 'yaml';
 
 export class ViewService {
-    constructor(private view: HomepageView) {}
+    constructor(private view: HomepageView) { }
 
     buildSegment() {
         const addTab = (text: string, parent: HTMLElement) => {
@@ -21,13 +21,15 @@ export class ViewService {
                 });
                 tab.classList.add('selected');
                 homepageSetting.tabSelected = text;
-                this.updateButton();
+                this.buildButton();
             };
             return tab;
         }
 
         const container = this.view.containerEl.children[1];
-        const SegmentContainer = container.createEl('div', { cls: 'Segment-container' });
+        const myContainer = container.querySelector('.my-container') ?? container.createEl('div', { cls: 'my-container' });
+
+        const SegmentContainer = myContainer.createEl('div', { cls: 'Segment-container' });
         const tabsButtonContainer = SegmentContainer.createEl('div', { cls: 'tabs-button-container' });
         this.view.homepageSetting.tabs.forEach(tab => {
             addTab(tab, tabsButtonContainer);
@@ -51,43 +53,27 @@ export class ViewService {
                     }
                 }
                 this.view.plugin.saveSettings();
-                this.updateButton();
+                this.buildButton();
             }
         });
 
-        this.updateButton();
+        this.buildButton();
     }
 
     buildContent() {
         const container = this.view.containerEl.children[1];
-        container.createEl('div', { cls: 'content-container' });
+        const myContainer = container.querySelector('.my-container') ?? container.createEl('div', { cls: 'my-container' });
+        const contentContainer = myContainer.querySelector('.content-container') ?? myContainer.createEl('div', { cls: 'content-container' });
         this.buildSearchBar();
-        this.updateTableByValue();
+        this.buildTable();
     }
 
-    update() {
+    build() {
         const container = this.view.containerEl.children[1];
         container.empty();
+        const myContainer = container.createEl('div', { cls: 'my-container' });
         this.buildSegment();
         this.buildContent();
-    }
-
-    doAutoUpdate(enableAutoUpdate = false, timeUpdate: number) {
-        if (enableAutoUpdate) {
-            if (this.view.homepageSetting.autoUpdateInterval !== null) {
-                clearInterval(this.view.homepageSetting.autoUpdateInterval);
-                this.view.homepageSetting.autoUpdateInterval = null;
-            }
-            this.view.homepageSetting.autoUpdateInterval = setInterval(async () => {
-                await this.update();
-                console.log(`auto update ${timeUpdate} s`);
-            }, timeUpdate * 1000);
-        } else {
-            if (this.view.homepageSetting.autoUpdateInterval !== null) {
-                clearInterval(this.view.homepageSetting.autoUpdateInterval);
-                this.view.homepageSetting.autoUpdateInterval = null;
-            }
-        }
     }
 
     getFileButtonValues(): string[] {
@@ -144,33 +130,9 @@ export class ViewService {
         return num1 - num2;
     }
 
-    getFilesByValue(value: string): TFile[] {
-        function isTag(value: string) {
-            return value[0] === '#';
-        }
+    
 
-        const files = this.view.app.vault.getMarkdownFiles();
-
-        if (value === this.view.homepageSetting.noTagValue) {
-            return files.filter(file => {
-                return !this.view.app.metadataCache.getFileCache(file)?.frontmatter?.tags;
-            });
-        }
-
-        if (isTag(value)) {
-            value = value.slice(1);
-            return files.filter(file => {
-                const cache = this.view.app.metadataCache.getFileCache(file);
-                return cache?.frontmatter?.tags?.includes(value);
-            })
-        }
-
-        return files.filter(file => {
-            return file.parent?.path === value;
-        });
-    }
-
-    updateButton() {
+    buildButton() {
         const container = this.view.containerEl.children[1];
         const SegmentContainer = container.querySelector('.Segment-container') ?? container.createEl('div', { cls: 'Segment-container' });
         SegmentContainer.querySelector('.file-button-container')?.remove();
@@ -191,7 +153,7 @@ export class ViewService {
 
                 button.onclick = () => {
                     this.view.homepageSetting.searchValue = value;
-                    const filesAmount = this.updateTableByValue();
+                    const filesAmount = this.buildTable();
                     new Notice(`${buttonShowValue} 中共有 ${filesAmount} 個檔案`, 700);
                 };
             });
@@ -199,14 +161,14 @@ export class ViewService {
         }
 
         if (this.view.homepageSetting.tabSelected === 'tag') {
-            const noTagButton = fileButtonContainer.createEl('button', { 
-                text: this.view.homepageSetting.noTagShowValue, 
-                cls: 'no-tag-button' 
+            const noTagButton = fileButtonContainer.createEl('button', {
+                text: this.view.homepageSetting.noTagShowValue,
+                cls: 'no-tag-button'
             });
             noTagButton.style.fontSize = `${this.view.plugin.settings.fileButtonFontSize}px`;
             noTagButton.onclick = () => {
                 this.view.homepageSetting.searchValue = this.view.homepageSetting.noTagValue;
-                const filesAmount = this.updateTableByValue();
+                const filesAmount = this.buildTable();
                 new Notice(`${this.view.homepageSetting.noTagShowValue} 中共有 ${filesAmount} 個檔案`, 700);
             };
         }
@@ -224,29 +186,29 @@ export class ViewService {
 
         const sortDiv = floatingBar.createEl('div', { cls: 'sort-container' });
         const sortSelect = sortDiv.createEl('select', { attr: { id: 'sort-select' } });
-        sortSelect.createEl('option', { 
-            value: this.view.homepageSetting.defaultSortFrontmatter, 
-            text: '不排序' 
+        sortSelect.createEl('option', {
+            value: this.view.homepageSetting.defaultSortFrontmatter,
+            text: '不排序'
         });
-        
+
         this.view.plugin.settings.myFrontmatter.forEach((frontmatter: string) => {
             sortSelect.createEl('option', { value: frontmatter, text: frontmatter });
         });
-        
+
         sortSelect.onchange = () => {
             this.view.homepageSetting.sortFrontmatter = sortSelect.value;
-            this.updateTableByValue();
+            this.buildTable();
         }
 
-        const reverseSortCheckbox = sortDiv.createEl('input', { 
-            type: 'checkbox', 
-            attr: { id: 'reverse-sort' } 
+        const reverseSortCheckbox = sortDiv.createEl('input', {
+            type: 'checkbox',
+            attr: { id: 'reverse-sort' }
         });
         reverseSortCheckbox.checked = !this.view.homepageSetting.sortAsc;
         reverseSortCheckbox.onclick = () => {
             this.view.homepageSetting.sortAsc = !this.view.homepageSetting.sortAsc;
             reverseSortCheckbox.checked = !this.view.homepageSetting.sortAsc;
-            this.updateTableByValue();
+            this.buildTable();
         }
         sortDiv.createEl('label', { text: '倒序', attr: { for: 'reverse-sort' } });
 
@@ -266,12 +228,12 @@ export class ViewService {
         searchInput.addEventListener('keydown', (event) => {
             if (event.key === 'Enter') {
                 this.view.homepageSetting.searchValue = searchInput.value;
-                this.updateTableByValue();
+                this.buildTable();
             }
         });
     }
 
-    updateTableByValue(value: string = this.view.homepageSetting.searchValue): number {
+    buildTable(value: string = this.view.homepageSetting.searchValue): number {
         value = value.trim();
 
         if (value === '') {
@@ -279,10 +241,42 @@ export class ViewService {
             return 0;
         }
 
-        return this.updateTableByFiles(this.getFilesByValue(value));
+        return this.buildTableByFiles(this.view.fileService.getFilesByValue(value));
     }
 
-    updateTableByFiles(files: TFile[]): number {
+    buildTableTitle(tableContainer: HTMLElement) {
+        const tableTitleContainer = tableContainer.createEl('div', { attr: { id: 'table-title' } });
+
+        const getTitle = () => {
+            if (this.view.homepageSetting.searchValue === this.view.homepageSetting.noTagValue)
+                return this.view.homepageSetting.noTagShowValue;
+            return this.view.homepageSetting.searchValue;
+        };
+
+        let valueTitle = getTitle();
+        const title = tableTitleContainer.createEl('span');
+        title.innerHTML = `<span class="value-title"> ${valueTitle} </span>`;
+
+        tableTitleContainer.addEventListener('contextmenu', (event) => {
+            event.preventDefault();
+            this.showContextMenu(event, tableTitleContainer);
+        });
+
+        const settingContainer = tableTitleContainer.createEl('span', { cls: 'title-setting-container' });
+
+        const showSubFolderCheckbox = settingContainer.createEl('input', {
+            type: 'checkbox',
+            attr: { id: 'show-sub-folder' },
+        });
+        showSubFolderCheckbox.checked = this.view.homepageSetting.showSubFolder;
+        showSubFolderCheckbox.onclick = () => {
+            this.view.homepageSetting.showSubFolder = showSubFolderCheckbox.checked;
+            this.buildTable();
+        }
+        settingContainer.createEl('label', { text: '顯示子資料夾內容', attr: { for: 'show-sub-folder' } });
+    }
+
+    buildTableByFiles(files: TFile[]): number {
         const fmatterAndsortAsc = (a: TFile, b: TFile) => {
             let adjust = 1;
             if (this.view.homepageSetting.sortAsc == false) adjust = -1;
@@ -304,30 +298,16 @@ export class ViewService {
 
         const container = this.view.containerEl.children[1];
         const contentContainer = container.querySelector('.content-container') ?? container.createEl('div', { cls: 'content-container' });
-        contentContainer.querySelector('.tableContainer')?.remove();
-        const tableContainer = contentContainer.createEl('div', { cls: 'tableContainer' });
-        const titleHeader = tableContainer.createEl('div', { attr: { id: 'title' } });
-
-        const getTitle = () => {
-            if (this.view.homepageSetting.searchValue === this.view.homepageSetting.noTagValue)
-                return this.view.homepageSetting.noTagShowValue;
-            return this.view.homepageSetting.searchValue;
-        };
-
-        let valueTitle = getTitle();
-        titleHeader.innerHTML = `<span class="value-title"> ${valueTitle} </span> <span class="file-count">${files.length} 個檔案</span>`;
-
-        titleHeader.addEventListener('contextmenu', (event) => {
-            event.preventDefault();
-            this.showContextMenu(event, titleHeader);
-        });
+        contentContainer.querySelector('.table-and-title-container')?.remove();
+        const tableAndTitleContainer = contentContainer.createEl('div', { cls: 'table-and-title-container' });
+        this.buildTableTitle(tableAndTitleContainer);
 
         const buildHeader = (headerRow: HTMLElement) => {
             if (this.view.plugin.settings.myTableHeader.length > 0) {
                 for (let i = 0; i <= this.view.plugin.settings.myFrontmatter.length; i++) {
                     headerRow.createEl('th', { text: this.view.plugin.settings.myTableHeader[i] || 'null' });
                 }
-            } else { // 使用者沒有設定 table header
+            } else {
                 headerRow.createEl('th', { text: "file" });
                 this.view.plugin.settings.myFrontmatter.forEach((header: string) => {
                     headerRow.createEl('th', { text: header });
@@ -336,8 +316,13 @@ export class ViewService {
         }
 
         if (files.length !== 0) {
-            const table = tableContainer.createEl('table');
+            const fileTableContainer = tableAndTitleContainer.createEl('div', { attr: { id: 'file-table-container' } });
+            const table = fileTableContainer.createEl('table');
             table.style.fontSize = `${this.view.plugin.settings.tableFontSize}px`;
+            
+            // 設置列數變數
+            const columnCount = this.view.plugin.settings.myFrontmatter.length + 1; // +1 是因為還有檔案名稱列
+            table.style.setProperty('--column-count', columnCount.toString());
 
             const thead = table.createEl('thead');
             const tbody = table.createEl('tbody');
@@ -383,15 +368,15 @@ export class ViewService {
                             const oldValue = cache?.frontmatter?.[this.view.plugin.settings.myFrontmatter[i]] || '';
 
                             if (newValue !== oldValue) {
-                                await this.saveFileFrontmatter(file, { 
-                                    [this.view.plugin.settings.myFrontmatter[i]]: newValue 
+                                await this.saveFileFrontmatter(file, {
+                                    [this.view.plugin.settings.myFrontmatter[i]]: newValue
                                 });
                             }
                         });
                     }
                     else {
-                        row.createEl('td', { 
-                            text: cache?.frontmatter?.[this.view.plugin.settings.myFrontmatter[i]] || 'null' 
+                        row.createEl('td', {
+                            text: cache?.frontmatter?.[this.view.plugin.settings.myFrontmatter[i]] || 'null'
                         });
                     }
                 }
@@ -436,8 +421,8 @@ export class ViewService {
         menu.style.top = `${event.pageY}px`;
 
         const menuItems = [
-            { text: '重命名資料夾文件', action: () => {}},
-            { text: '搬移資料夾文件', action: () => {}},
+            { text: '重命名資料夾文件', action: () => { } },
+            { text: '搬移資料夾文件', action: () => { } },
         ];
 
         menuItems.forEach(item => {
@@ -458,4 +443,4 @@ export class ViewService {
         };
         setTimeout(() => document.addEventListener('click', closeMenu), 0);
     }
-} 
+}

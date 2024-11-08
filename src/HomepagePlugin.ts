@@ -37,7 +37,7 @@ export default class HomepagePlugin extends Plugin {
             callback: () => {
                 const view = this.getHomepageView();
                 if (view) {
-                    view.viewService.update();
+                    view.viewService.build();
                 } else {
                     new Notice('首頁視圖未打開');
                 }
@@ -53,8 +53,8 @@ export default class HomepagePlugin extends Plugin {
                 const view = this.getHomepageView();
                 if (view) {
                     view.homepageSetting.editMode = !view.homepageSetting.editMode;
-                    view.viewService.update();
-                    view.viewService.update();
+                    view.viewService.build();
+                    view.viewService.build();
                 } else {
                     new Notice('首頁視圖未打開');
                 }
@@ -66,7 +66,7 @@ export default class HomepagePlugin extends Plugin {
         const { workspace } = this.app;
         let leaf = workspace.getLeavesOfType(VIEW_TYPE_HOMEPAGE)[0];
         if (!leaf) {
-            leaf = workspace.getLeaf(false);
+            leaf = workspace.getLeaf(true);
             await leaf.setViewState({
                 type: VIEW_TYPE_HOMEPAGE,
                 active: true,
@@ -77,16 +77,5 @@ export default class HomepagePlugin extends Plugin {
 
     async saveSettings() {
         await this.saveData(this.settings);
-
-        // 如果開啟自動更新，則更新所有首頁視圖
-        if (this.settings.autoUpdateOnChange) {
-            const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_HOMEPAGE);
-            leaves.forEach(leaf => {
-                const view = leaf.view as HomepageView;
-                if (view) {
-                    view.viewService.doAutoUpdate(this.settings.allowAutoUpdate, this.settings.timeUpdate);
-                }
-            });
-        }
     }
 }

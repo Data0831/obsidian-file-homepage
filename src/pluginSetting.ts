@@ -2,10 +2,6 @@ import { App, PluginSettingTab, Setting } from 'obsidian';
 import Homepage from '../main';
 
 export class MyPluginSettings {
-    autoUpdateOnChange: boolean = false;
-    allowAutoUpdate: boolean = false;
-    timeUpdate: number = 20;
-
     enableDarkMode: boolean = false;
     tableFontSize: number = 18;
     fileButtonFontSize: number = 16;
@@ -13,6 +9,7 @@ export class MyPluginSettings {
     myFrontmatter: string[] = [];
     myTableHeader: string[] = [];
     myCustomTabsButton: string[] = [];
+    showSubFolder: boolean = false;
 }
 
 export class MyPluginSettingTab extends PluginSettingTab {
@@ -40,30 +37,6 @@ export class MyPluginSettingTab extends PluginSettingTab {
                         this.plugin.settings.enableDarkMode = false;
                         await this.plugin.saveSettings();
                     }));
-
-        new Setting(containerEl)
-            .setName('啟用自動更新頁面')
-            .setDesc('預設是開啟')
-            .addToggle(toggle =>
-                toggle
-                    .setValue(this.plugin.settings.allowAutoUpdate)
-                    .onChange(async (value) => {
-                        this.plugin.settings.allowAutoUpdate = value;
-                        this.plugin.settings.autoUpdateOnChange = true;
-                        await this.plugin.saveSettings();
-                    }));
-
-        new Setting(containerEl)
-            .setName('更新時間')
-            .setDesc('預設是 20 秒，最少 2 秒，要先啟用自動更新才有效')
-            .addText(text => text.setValue(this.plugin.settings.timeUpdate.toString()).onChange(async (value) => {
-                let intValue = parseInt(value);
-                if (intValue >= 2) {
-                    this.plugin.settings.timeUpdate = intValue;
-                    this.plugin.settings.autoUpdateOnChange = true;
-                    await this.plugin.saveSettings();
-                }
-            }));
 
         new Setting(containerEl)
             .setName('表格字體大小')
@@ -110,5 +83,13 @@ export class MyPluginSettingTab extends PluginSettingTab {
                     });
                     await this.plugin.saveSettings();
                 })).setClass('custom-textarea');
+        
+        new Setting(containerEl)
+            .setName('顯示子資料夾')
+            .setDesc('預設是 false')
+            .addToggle(toggle => toggle.setValue(this.plugin.settings.showSubFolder).onChange(async (value) => {
+                this.plugin.settings.showSubFolder = value;
+                await this.plugin.saveSettings();
+            }));
     }
 }

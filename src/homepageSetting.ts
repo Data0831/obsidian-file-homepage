@@ -6,11 +6,11 @@ export class HomepageSetting {
     readonly noTagShowValue: string = '#no-tags';
     readonly rootFolderShowValue: string = 'root';
 
-    autoUpdateInterval: NodeJS.Timeout | null = null;
     searchValue: string = this.rootFolderValue;
     sortFrontmatter: string = this.defaultSortFrontmatter;
     sortAsc: boolean = true;
     tabSelected: string = 'folder'; // tag or folder
     tabs: string[] = ['folder', 'tag', 'custom'];
     editMode: boolean = false;
+    showSubFolder: boolean = false;
 }

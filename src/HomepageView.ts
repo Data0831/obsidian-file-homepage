@@ -6,7 +6,7 @@ import { HomepagePluginInterface } from './types';
 import { VIEW_TYPE_HOMEPAGE } from './types';
 
 export class HomepageView extends ItemView {
-    private fileService: FileService;
+    fileService: FileService;
     viewService: ViewService;
     homepageSetting: HomepageSetting;
     plugin: HomepagePluginInterface;
@@ -14,9 +14,10 @@ export class HomepageView extends ItemView {
     constructor(leaf: WorkspaceLeaf, plugin: HomepagePluginInterface) {
         super(leaf);
         this.plugin = plugin;
-        this.fileService = new FileService(this.app);
         this.viewService = new ViewService(this);
         this.homepageSetting = new HomepageSetting();
+        this.homepageSetting.showSubFolder = this.plugin.settings.showSubFolder;
+        this.fileService = new FileService(this.app, this.homepageSetting);
     }
 
     getViewType(): string {
