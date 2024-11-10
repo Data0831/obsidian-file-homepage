@@ -1,5 +1,13 @@
 # 已知問題
 
+## 下一步
+- search
+    - contain search(部分搜尋)、 and、or 類似 sql 的搜尋
+    - 在已選擇的 tag(folder) 中搜尋
+- 解決有時候恢復焦點需要點擊兩次的問題
+
+
+
 # 可以增加功能
 ## 文件
 
@@ -21,7 +29,6 @@
  	- 開啟新頁面
   	- 新增文件
 - 搬移資料夾文件
-- cusor: pointer
 
 ## 其它右鍵選單
 - basename
@@ -30,9 +37,9 @@
 ## filebutton
 - class 與 obsidian 的 file button 一樣
 - overflow
+- 使用者子定義 color group， color:value group:value
 
 ## table
-- button 排序不只根據 長度，還要根據 abc
 - 勾選欄位，對 table 操作
 - th size 設定
 
