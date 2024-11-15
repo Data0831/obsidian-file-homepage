@@ -1,11 +1,11 @@
-import { Plugin, WorkspaceLeaf, Notice, Menu, MarkdownView, Editor } from 'obsidian';
-import { MyPluginSettings, MyPluginSettingTab } from './setting/PluginSetting';
-import { HomepageView } from './viewsAndModal/HomepageView';
-import { VIEW_TYPE_HOMEPAGE } from './types';
-import { TableEditModal } from './viewsAndModal/TableEditModal';
+import { Plugin, Notice, Menu, MarkdownView, Editor } from 'obsidian';
+import { MyPluginSetting, MyPluginSettingTab } from './MyPluginSetting';
+import { HomepageView } from './homepage/HomepageView';
+import { TableEditModal } from './table/TableEditModal';
 
-export default class HomepagePlugin extends Plugin {
-    myPluginSettings: MyPluginSettings;
+export const VIEW_TYPE_HOMEPAGE = "homepage-view";
+export class MyPlugin extends Plugin {
+    pluginSetting: MyPluginSetting;
 
     getHomepageView(): HomepageView | null {
         const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_HOMEPAGE);
@@ -13,7 +13,7 @@ export default class HomepagePlugin extends Plugin {
     }
 
     async onload() {
-        this.myPluginSettings = Object.assign(new MyPluginSettings(), await this.loadData());
+        this.pluginSetting = Object.assign(new MyPluginSetting(), await this.loadData());
         this.addSettingTab(new MyPluginSettingTab(this.app, this));
         this.registerView(VIEW_TYPE_HOMEPAGE, (leaf) => new HomepageView(leaf, this));
         this.registerCommands();
@@ -101,10 +101,10 @@ export default class HomepagePlugin extends Plugin {
                         const modal = new TableEditModal(this.app, tableData, (newTableText: string) => {
                             const { from, to } = this.getTableRange(editor);
                             editor.replaceRange(newTableText, from, to);
-                        }, this.myPluginSettings);
+                        }, this.pluginSetting);
 
                         modal.setting.editMode = !modal.setting.editMode;
-                        modal.buildTableByTableData();
+                        modal.commonBuildService.buildTable();
                     } else {
                         new Notice('游標不在表格內');
                     }
@@ -129,7 +129,7 @@ export default class HomepagePlugin extends Plugin {
     }
 
     async saveSettings() {
-        await this.saveData(this.myPluginSettings);
+        await this.saveData(this.pluginSetting);
     }
 
     private isCursorInTable(editor: Editor): boolean {
@@ -147,7 +147,7 @@ export default class HomepagePlugin extends Plugin {
             // 更新表格內容
             const { from, to } = this.getTableRange(editor);
             editor.replaceRange(newTableText, from, to);
-        }, this.myPluginSettings);
+        }, this.pluginSetting);
 
         modal.open();
     }

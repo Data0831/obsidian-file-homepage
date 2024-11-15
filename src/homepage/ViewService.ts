@@ -1,5 +1,5 @@
-import { HomepageView } from '../viewsAndModal/HomepageView';
-import { Notice, setIcon, TFile, CachedMetadata } from 'obsidian';
+import { HomepageView } from './HomepageView';
+import { Notice, setIcon, TFile } from 'obsidian';
 import * as YAML from 'yaml';
 
 export class ViewService {
@@ -9,7 +9,7 @@ export class ViewService {
         const addTab = (text: string, parent: HTMLElement) => {
             const tab = parent.createEl('button', { text: text, cls: 'tab-button' });
             const homepageSetting = this.view.homepageSetting;
-            const fontSize = this.view.plugin.myPluginSettings.fileButtonFontSize;
+            const fontSize = this.view.plugin.pluginSetting.fileButtonFontSize;
 
             tab.style.fontSize = `${fontSize}px`;
             if (text === homepageSetting.tabSelected) {
@@ -41,14 +41,14 @@ export class ViewService {
             const button = target.closest('button');
             if (button && button.textContent) {
                 if (this.view.homepageSetting.tabSelected !== 'custom') {
-                    if (!this.view.plugin.myPluginSettings.myCustomTabsButton.includes(button.textContent)) {
-                        this.view.plugin.myPluginSettings.myCustomTabsButton.push(button.textContent);
+                    if (!this.view.plugin.pluginSetting.CustomButton.includes(button.textContent)) {
+                        this.view.plugin.pluginSetting.CustomButton.push(button.textContent);
                         new Notice(`已添加 "${button.textContent}" 到自定義標籤`);
                     }
                 } else {
-                    const index = this.view.plugin.myPluginSettings.myCustomTabsButton.indexOf(button.textContent);
+                    const index = this.view.plugin.pluginSetting.CustomButton.indexOf(button.textContent);
                     if (index > -1) {
-                        this.view.plugin.myPluginSettings.myCustomTabsButton.splice(index, 1);
+                        this.view.plugin.pluginSetting.CustomButton.splice(index, 1);
                         new Notice(`已從自定義標籤中移除 "${button.textContent}"`);
                     }
                 }
@@ -81,7 +81,7 @@ export class ViewService {
         const SegmentContainer = container.querySelector('.Segment-container') ?? container.createEl('div', { cls: 'Segment-container' });
         SegmentContainer.querySelector('.file-button-container')?.remove();
         const fileButtonContainer = SegmentContainer.createEl('div', { cls: 'file-button-container' });
-        fileButtonContainer.style.fontSize = `${this.view.plugin.myPluginSettings.fileButtonFontSize}px`;
+        fileButtonContainer.style.fontSize = `${this.view.plugin.pluginSetting.fileButtonFontSize}px`;
 
         const fileButtonValues: string[] = this.view.fileService.getFileButtonValues();
 
@@ -89,11 +89,11 @@ export class ViewService {
             fileButtonValues.forEach(value => {
                 let buttonShowValue = value;
                 if (value[0] !== '#') {
-                    buttonShowValue = value.split('/').pop() || this.view.homepageSetting.rootFolderShowValue;
+                    buttonShowValue = value.split('/').pop() || this.view.homepageSetting.rootFolderText;
                 }
 
                 const button = fileButtonContainer.createEl('button', { text: buttonShowValue, cls: 'file-button' });
-                button.style.fontSize = `${this.view.plugin.myPluginSettings.fileButtonFontSize}px`;
+                button.style.fontSize = `${this.view.plugin.pluginSetting.fileButtonFontSize}px`;
 
                 button.onclick = () => {
                     this.view.homepageSetting.searchValue = value;
@@ -106,14 +106,14 @@ export class ViewService {
 
         if (this.view.homepageSetting.tabSelected === 'tag') {
             const noTagButton = fileButtonContainer.createEl('button', {
-                text: this.view.homepageSetting.noTagShowValue,
+                text: this.view.homepageSetting.noTagText,
                 cls: 'no-tag-button'
             });
-            noTagButton.style.fontSize = `${this.view.plugin.myPluginSettings.fileButtonFontSize}px`;
+            noTagButton.style.fontSize = `${this.view.plugin.pluginSetting.fileButtonFontSize}px`;
             noTagButton.onclick = () => {
                 this.view.homepageSetting.searchValue = this.view.homepageSetting.noTagValue;
                 const filesAmount = this.buildTable();
-                new Notice(`${this.view.homepageSetting.noTagShowValue} 中共有 ${filesAmount} 個檔案`, 700);
+                new Notice(`${this.view.homepageSetting.noTagText} 中共有 ${filesAmount} 個檔案`, 700);
             };
         }
     }
@@ -131,16 +131,16 @@ export class ViewService {
         const sortDiv = floatingBar.createEl('div', { cls: 'sort-container' });
         const sortSelect = sortDiv.createEl('select', { attr: { id: 'sort-select' } });
         sortSelect.createEl('option', {
-            value: this.view.homepageSetting.defaultSortFrontmatter,
+            value: this.view.homepageSetting.defaultFrontmatter,
             text: '不排序'
         });
 
-        this.view.plugin.myPluginSettings.myFrontmatter.forEach((frontmatter: string) => {
+        this.view.plugin.pluginSetting.Frontmatter.forEach((frontmatter: string) => {
             sortSelect.createEl('option', { value: frontmatter, text: frontmatter });
         });
 
         sortSelect.onchange = () => {
-            this.view.homepageSetting.sortFrontmatter = sortSelect.value;
+            this.view.homepageSetting.sortKey = sortSelect.value;
             this.buildTable();
         }
 
@@ -148,10 +148,10 @@ export class ViewService {
             type: 'checkbox',
             attr: { id: 'reverse-sort' }
         });
-        reverseSortCheckbox.checked = !this.view.homepageSetting.sortAsc;
+        reverseSortCheckbox.checked = !this.view.homepageSetting.ascending;
         reverseSortCheckbox.onclick = () => {
-            this.view.homepageSetting.sortAsc = !this.view.homepageSetting.sortAsc;
-            reverseSortCheckbox.checked = !this.view.homepageSetting.sortAsc;
+            this.view.homepageSetting.ascending = !this.view.homepageSetting.ascending;
+            reverseSortCheckbox.checked = !this.view.homepageSetting.ascending;
             this.buildTable();
         }
         sortDiv.createEl('label', { text: '倒序', attr: { for: 'reverse-sort' } });
@@ -193,7 +193,7 @@ export class ViewService {
 
         const getTitle = () => {
             if (this.view.homepageSetting.searchValue === this.view.homepageSetting.noTagValue)
-                return this.view.homepageSetting.noTagShowValue;
+                return this.view.homepageSetting.noTagText;
             return this.view.homepageSetting.searchValue;
         };
 
@@ -221,16 +221,16 @@ export class ViewService {
     buildTableByFiles(files: TFile[]): number {
         const fmatterAndsortAsc = (a: TFile, b: TFile) => {
             let adjust = 1;
-            if (this.view.homepageSetting.sortAsc == false) adjust = -1;
+            if (this.view.homepageSetting.ascending == false) adjust = -1;
 
             // 不排序
-            if (this.view.homepageSetting.sortFrontmatter === this.view.homepageSetting.defaultSortFrontmatter) {
+            if (this.view.homepageSetting.sortKey === this.view.homepageSetting.defaultFrontmatter) {
                 return adjust * a.basename.localeCompare(b.basename);
             }
 
             // 排序
-            const aValue = this.view.app.metadataCache.getFileCache(a)?.frontmatter?.[this.view.homepageSetting.sortFrontmatter];
-            const bValue = this.view.app.metadataCache.getFileCache(b)?.frontmatter?.[this.view.homepageSetting.sortFrontmatter];
+            const aValue = this.view.app.metadataCache.getFileCache(a)?.frontmatter?.[this.view.homepageSetting.sortKey];
+            const bValue = this.view.app.metadataCache.getFileCache(b)?.frontmatter?.[this.view.homepageSetting.sortKey];
             return adjust * (aValue || '').localeCompare(bValue || '');
         }
 
@@ -245,13 +245,13 @@ export class ViewService {
         this.buildTableTitle(tableAndTitleContainer);
 
         const buildHeader = (headerRow: HTMLElement) => {
-            if (this.view.plugin.myPluginSettings.myTableHeader.length > 0) {
-                for (let i = 0; i <= this.view.plugin.myPluginSettings.myFrontmatter.length; i++) {
-                    headerRow.createEl('th', { text: this.view.plugin.myPluginSettings.myTableHeader[i] || 'null' });
+            if (this.view.plugin.pluginSetting.TableHeader.length > 0) {
+                for (let i = 0; i <= this.view.plugin.pluginSetting.Frontmatter.length; i++) {
+                    headerRow.createEl('th', { text: this.view.plugin.pluginSetting.TableHeader[i] || 'null' });
                 }
             } else {
                 headerRow.createEl('th', { text: "file" });
-                this.view.plugin.myPluginSettings.myFrontmatter.forEach((header: string) => {
+                this.view.plugin.pluginSetting.Frontmatter.forEach((header: string) => {
                     headerRow.createEl('th', { text: header });
                 });
             }
@@ -260,10 +260,10 @@ export class ViewService {
         if (files.length !== 0) {
             const fileTableContainer = tableAndTitleContainer.createEl('div', { attr: { id: 'file-table-container' } });
             const table = fileTableContainer.createEl('table');
-            table.style.fontSize = `${this.view.plugin.myPluginSettings.tableFontSize}px`;
+            table.style.fontSize = `${this.view.plugin.pluginSetting.tableFontSize}px`;
             
             // 設置列數變數
-            const columnCount = this.view.plugin.myPluginSettings.myFrontmatter.length + 1; // +1 是因為還有檔案名稱列
+            const columnCount = this.view.plugin.pluginSetting.Frontmatter.length + 1; // +1 是因為還有檔案名稱列
             table.style.setProperty('--column-count', columnCount.toString());
 
             const thead = table.createEl('thead');
@@ -291,34 +291,34 @@ export class ViewService {
                     this.view.app.workspace.openLinkText(file.path, '', false);
                 });
 
-                for (let i = 0; i < this.view.plugin.myPluginSettings.myFrontmatter.length; i++) {
+                for (let i = 0; i < this.view.plugin.pluginSetting.Frontmatter.length; i++) {
                     if (this.view.homepageSetting.editMode) {
                         const td = row.createEl('td');
                         const input = td.createEl('input', {
-                            value: cache?.frontmatter?.[this.view.plugin.myPluginSettings.myFrontmatter[i]] || '',
+                            value: cache?.frontmatter?.[this.view.plugin.pluginSetting.Frontmatter[i]] || '',
                             cls: 'edit-input',
                             attr: {
                                 type: 'text',
-                                placeholder: `輸入 ${this.view.plugin.myPluginSettings.myFrontmatter[i]}`,
+                                placeholder: `輸入 ${this.view.plugin.pluginSetting.Frontmatter[i]}`,
                                 spellcheck: 'false'
                             }
                         });
-                        input.style.fontSize = `${this.view.plugin.myPluginSettings.tableFontSize}px`;
+                        input.style.fontSize = `${this.view.plugin.pluginSetting.tableFontSize}px`;
 
                         input.addEventListener('blur', async () => {
                             const newValue = input.value;
-                            const oldValue = cache?.frontmatter?.[this.view.plugin.myPluginSettings.myFrontmatter[i]] || '';
+                            const oldValue = cache?.frontmatter?.[this.view.plugin.pluginSetting.Frontmatter[i]] || '';
 
                             if (newValue !== oldValue) {
                                 await this.saveFileFrontmatter(file, {
-                                    [this.view.plugin.myPluginSettings.myFrontmatter[i]]: newValue
+                                    [this.view.plugin.pluginSetting.Frontmatter[i]]: newValue
                                 });
                             }
                         });
                     }
                     else {
                         row.createEl('td', {
-                            text: cache?.frontmatter?.[this.view.plugin.myPluginSettings.myFrontmatter[i]] || 'null'
+                            text: cache?.frontmatter?.[this.view.plugin.pluginSetting.Frontmatter[i]] || 'null'
                         });
                     }
                 }

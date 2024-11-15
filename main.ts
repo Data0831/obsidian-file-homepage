@@ -1,4 +1,4 @@
-import HomepagePlugin from './src/HomepagePlugin';
+import { MyPlugin } from './src/MyPlugin';
 
-export default HomepagePlugin;
+export default MyPlugin;
 
