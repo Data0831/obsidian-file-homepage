@@ -1,9 +1,9 @@
 import { ItemView, WorkspaceLeaf } from 'obsidian';
-import { FileService } from './services/FileService';
-import { ViewService } from './services/ViewService';
-import { HomepageSetting } from './HomepageSetting';
-import { HomepagePluginInterface } from './types';
-import { VIEW_TYPE_HOMEPAGE } from './types';
+import { FileService } from '../services/FileService';
+import { ViewService } from '../services/ViewService';
+import { HomepageSetting } from '../setting/HomepageSetting';
+import { HomepagePluginInterface } from '../types';
+import { VIEW_TYPE_HOMEPAGE } from '../types';
 
 export class HomepageView extends ItemView {
     fileService: FileService;
@@ -16,7 +16,7 @@ export class HomepageView extends ItemView {
         this.plugin = plugin;
         this.viewService = new ViewService(this);
         this.homepageSetting = new HomepageSetting();
-        this.homepageSetting.showSubFolder = this.plugin.settings.showSubFolder;
+        this.homepageSetting.showSubFolder = this.plugin.myPluginSettings.showSubFolder;
         this.fileService = new FileService(this);
 
         this.registerEvent(

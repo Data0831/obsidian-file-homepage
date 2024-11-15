@@ -1,11 +1,13 @@
 # 已知問題
 
-## 下一步
+## 下一步 homepage
 - search
     - contain search(部分搜尋)、 and、or 類似 sql 的搜尋
     - 在已選擇的 tag(folder) 中搜尋
 - 解決有時候恢復焦點需要點擊兩次的問題
 
+## 下一步 table
+- 右鍵選單
 
 
 # 可以增加功能
@@ -60,3 +62,4 @@
 ## 手機支援
 
 - readme 加入安裝方法
+- search 使用 sql 邏輯

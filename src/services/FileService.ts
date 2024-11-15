@@ -1,5 +1,5 @@
 import { App, TFile, TFolder, CachedMetadata, Notice } from 'obsidian';
-import { HomepageView } from '../HomepageView';
+import { HomepageView } from '../viewsAndModal/HomepageView';
 
 export class FileService {
     constructor(private view: HomepageView) { }
@@ -97,7 +97,7 @@ export class FileService {
                 return this.getFoldersPath();
             }
         } else if (this.view.homepageSetting.tabSelected === 'custom') {
-            return this.view.plugin.settings.myCustomTabsButton;
+            return this.view.plugin.myPluginSettings.myCustomTabsButton;
         }
         return [];
     }

@@ -1,6 +1,6 @@
 export const VIEW_TYPE_HOMEPAGE = "homepage-view";
 
 export interface HomepagePluginInterface {
-    settings: any;
+    myPluginSettings: any;
     saveSettings(): Promise<void>;
 } 
