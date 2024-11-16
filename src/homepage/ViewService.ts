@@ -181,7 +181,6 @@ export class ViewService {
         value = value.trim();
 
         if (value === '') {
-            new Notice('不可為空，請輸入正確的值');
             return 0;
         }
 

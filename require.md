@@ -1,14 +1,19 @@
 # 已知問題
 
 ## 下一步 homepage
+- 程式碼整理
+	- updateui
 - search
     - contain search(部分搜尋)、 and、or 類似 sql 的搜尋
     - 在已選擇的 tag(folder) 中搜尋
 - 解決有時候恢復焦點需要點擊兩次的問題
 
 ## 下一步 table
-- 右鍵選單
-
+- url 偵測，如果是 url 的話，點擊後可以開啟 url，可以參考檔案部分 url 的寫法
+- 虛擬 index ，可以藏在第一個 td，考慮要不要用 display:none
+- 增加刪除 row、column
+- import json、markdown table
+- output json、markdown table
 
 # 可以增加功能
 ## 文件

@@ -21,7 +21,7 @@
     padding: 0 !important;
 }
 
-.------container {}
+.-container {}
 
 .my-container {
     height: 100%;
@@ -82,7 +82,7 @@
     cursor: pointer;
 }
 
-.------content {}
+.--content {}
 
 .content-container {
     width: 100%;
@@ -91,7 +91,7 @@
     flex-direction: column;
 }
 
-.------floating-bar {}
+.---floating-bar {}
 
 
 .floating-bar {
@@ -178,7 +178,7 @@
     stroke-width: 2.5px;
 }
 
-.------table-and-title {}
+.---table-and-overflow-containe {}
 
 .table-and-overflow-container {
     display: flex;
@@ -213,7 +213,7 @@
     background-color: white;
 }
 
-.------table-container {}
+.----table-container {}
 
 #file-table-container {
     padding: 0 4px;
@@ -256,8 +256,6 @@ tr:not(:last-child) {
     border-bottom: 1px solid #dee2e6;
 }
 
-
-
 tr:nth-child(even) {
     background-color: #f8f9fa;
 }
@@ -272,13 +270,10 @@ td:first-child {
     color: #495057;
 }
 
-
 .internal-link {
     color: var(--text-accent);
     text-decoration: none;
 }
-
-
 
 .file-button-container {
     /* background-color: #f0f0f0; */
@@ -289,10 +284,6 @@ td:first-child {
     margin-left: 12px;
     color: #5A81F0;
 }
-
-
-
-
 
 .file-button {
     background-color: #EAECF9 !important;
@@ -354,6 +345,7 @@ td:first-child {
     outline: none !important;
 }
 
+.---table-edit-modal {}
 /* Modal 全螢幕樣式 */
 .table-edit-modal {
     width: 90vw !important;
@@ -375,7 +367,6 @@ td:first-child {
     overflow: hidden;
 }
 
-/* 覆蓋 Obsidian 的預設 Modal 樣式 */
 .modal-container {
     width: 100% !important;
     height: 100% !important;
@@ -407,7 +398,6 @@ td:first-child {
     overflow: hidden;
 }
 
-/* 固定搜索欄在頂部 */
 .table-edit-modal .floating-bar {
     position: sticky;
     top: 0;
@@ -420,33 +410,30 @@ td:first-child {
     height: 100%;
 }
 
-.context-menu {
-    position: absolute;
-    background-color: #ffffff;
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    padding: 8px 0;
-    z-index: 1000;
+.-menu-item {}
+.menu-item-red {
+    color: #ff5555 !important;
 }
 
+/* .menu-item-red:hover {
+    color: #ff0000 !important;
+    background-color: rgba(255, 0, 0, 0.1) !important;
+} */
 
-.context-menu-item {
-    padding: 6px 12px;
-    cursor: pointer;
-    color: var(--text-normal);
-    transition: background-color 0.2s ease;
+.menu-item-green {
+    color: #55aa55 !important;
 }
 
-.context-menu-item:hover {
-    background-color: var(--background-modifier-hover);
+/* .menu-item-green:hover {
+    color: #00aa00 !important;
+    background-color: rgba(0, 255, 0, 0.1) !important;
+} */
+
+/* 如果要改變圖標顏色 */
+.menu-item-red .menu-item-icon {
+    color: #ff5555 !important;
 }
 
-.context-menu-item.delete-item {
-    color: var(--text-error);
-}
-
-.context-menu-item.delete-item:hover {
-    background-color: var(--background-modifier-error);
-    color: var(--text-on-accent);
+.menu-item-green .menu-item-icon {
+    color: #55aa55 !important;
 }

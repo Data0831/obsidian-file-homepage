@@ -20,6 +20,7 @@ export class HomepageView extends ItemView {
         this.fileService = new FileService(this);
 
         this.registerEvent(
+            // 切換到首頁視圖時，重新渲染
             this.app.workspace.on('active-leaf-change', (leaf) => {
                 if (leaf && leaf.view instanceof ItemView && leaf.view === this) {
                     this.onViewActivate();

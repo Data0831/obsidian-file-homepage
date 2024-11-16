@@ -1,4 +1,4 @@
-import { Notice, setIcon } from 'obsidian';
+import { Notice, setIcon, Menu } from 'obsidian';
 import { MySetting } from './MySetting';
 import { MyPluginSetting } from 'src/MyPluginSetting';
 
@@ -9,6 +9,7 @@ export class CommonBuildSetting {
     keys: string[] = [];
     map: Map<string, string>[] = [];
     lineNumberEnable: boolean = false;
+    functionButtonMenu: Menu;
 
     constructor(containerEl: HTMLElement) {
         this.containerEl = containerEl;
@@ -75,11 +76,16 @@ export class CommonBuildService {
             }
         });
 
-        const button = floatingBar.createEl('button', { attr: { id: 'function-button' } });
-        setIcon(button, 'box');
-        button.onclick = () => {
-            alert('選項');
-        }
+        const functionButton = floatingBar.createEl('button', { attr: { id: 'function-button' } });
+        setIcon(functionButton, 'box');
+        functionButton.addEventListener('click', (event) => {
+            event.preventDefault();
+            const buttonRect = functionButton.getBoundingClientRect();
+            this.commonBuildSetting.functionButtonMenu.showAtPosition({
+                x: buttonRect.left-70,
+                y: buttonRect.bottom
+            });
+        });
     }
 
     buildRow(tbody: HTMLElement, map: Map<string, string>, lineNumber: number) {
@@ -118,13 +124,22 @@ export class CommonBuildService {
             }
         }
 
-        // // 綁定右鍵選單事件
         // row.addEventListener('contextmenu', (event: MouseEvent) => {
-        //     // 阻止預設的右鍵選單
-        //     event.preventDefault();
-        //     event.stopPropagation();
-        //     // 顯示自定義選單
-        //     this.showRowContextMenu(event, row, map);
+        //     event.preventDefault(); // 阻止預設的右鍵選單
+
+        //     const menu = new Menu();
+        //     menu.addItem((item) => {
+        //         item.setTitle('選項 1').onClick(() => {
+        //             console.log('選項 1 被點擊');
+        //         });
+        //     });
+        //     menu.addItem((item) => {
+        //         item.setTitle('選項 2').onClick(() => {
+        //             console.log('選項 2 被點擊');
+        //         });
+        //     });
+
+        //     menu.showAtPosition({ x: event.pageX, y: event.pageY }); 
         // });
     }
 

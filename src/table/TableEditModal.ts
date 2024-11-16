@@ -1,4 +1,4 @@
-import { App, Modal, setIcon } from 'obsidian';
+import { App, Menu, Modal, Notice, setIcon } from 'obsidian';
 import { MyPluginSetting } from '../MyPluginSetting';
 import { MySetting } from '../common/MySetting';
 import { CommonBuildSetting, CommonBuildService } from '../common/CommonBuild';
@@ -30,6 +30,20 @@ export class TableEditModal extends Modal {
     }
 
     onOpen() {
+        // 註冊快捷鍵處理器
+        this.scope.register([], 'F3', (evt: KeyboardEvent) => {
+            if (document.activeElement instanceof HTMLElement) {
+                document.activeElement.blur();
+                setTimeout(() => {
+                    this.setting.editMode = !this.setting.editMode;
+                    new Notice(`編輯模式: ${this.setting.editMode ? '開啟' : '關閉'}`, 700);
+                    this.build();
+                }, 50);
+            }
+            return false;
+        });
+
+        this.initBuildCommonSetting();
         this.build();
     }
 
@@ -60,12 +74,46 @@ export class TableEditModal extends Modal {
         return myKey;
     }
 
+    functionButtonMenu() {
+        const menu = new Menu();
+        menu.addItem((item) => {
+            const itemDom = (item as any).dom as HTMLElement;
+            if (itemDom) {
+                itemDom.addClass('menu-item-green');
+            }
+            item
+                .setTitle('保存')
+                .setIcon('save')
+                .onClick(() => {
+                    this.onSubmit(this.getMarkdownTable());
+                    new Notice('表格已保存', 700);
+                });
+        });
+        menu.addItem((item) => {
+            const itemDom = (item as any).dom as HTMLElement;
+            if (itemDom) {
+                itemDom.addClass('menu-item-green');
+            }
+            item
+                .setTitle('選項 2')
+                .setIcon('trash')
+                .onClick(() => {
+                    console.log('選項 2 被點擊');
+                });
+        });
+        return menu;
+    }
+
+    initBuildCommonSetting() {
+        this.commonBuildService.commonBuildSetting.lineNumberEnable = true;
+        this.commonBuildService.commonBuildSetting.functionButtonMenu = this.functionButtonMenu();
+    }
+
     updateBuildCommonSetting() {
         this.commonBuildService.commonBuildSetting.keys = this.getKeys();
         this.commonBuildService.commonBuildSetting.map = this.filterTableMap;
         this.commonBuildService.commonBuildSetting.totalCount = this.originTableMap.length;
         this.commonBuildService.commonBuildSetting.currentCount = this.filterTableMap.length;
-        this.commonBuildService.commonBuildSetting.lineNumberEnable = true;
     }
 
     resetTableMap() {
@@ -206,29 +254,26 @@ export class TableEditModal extends Modal {
     }
 
     private getMarkdownTable(): string {
-        const rows = this.tableEl.rows;
-        const markdownRows = [];
-
-        // 處理標題行
-        const headerCells = Array.from(rows[0].cells).map(cell => {
-            const input = cell.querySelector('input');
-            return input?.value || '';
-        });
-        markdownRows.push(`|${headerCells.join('|')}|`);
-
-        // 添加分隔行
-        markdownRows.push(`|${headerCells.map(() => '---').join('|')}|`);
-
-        // 處理數據行
-        for (let i = 1; i < rows.length; i++) {
-            const cells = Array.from(rows[i].cells).map(cell => {
-                const input = cell.querySelector('input');
-                return input?.value || '';
-            });
-            markdownRows.push(`|${cells.join('|')}|`);
+        if (this.filterTableMap.length === 0) {
+            return '';
         }
 
-        return markdownRows.join('\n');
+        // 取得所有欄位名稱
+        const headers = this.getKeys();
+        
+        // 建立表頭行
+        const headerRow = `| ${headers.join(' | ')} |`;
+        
+        // 建立分隔行
+        const separatorRow = `| ${headers.map(() => '---').join(' | ')} |`;
+        
+        // 建立資料行
+        const dataRows = this.filterTableMap.map(row => {
+            return `| ${headers.map(header => row.get(header) || '').join(' | ')} |`;
+        });
+
+        // 組合所有行並加上換行符號
+        return [headerRow, separatorRow, ...dataRows].join('\n');
     }
 
     onClose() {

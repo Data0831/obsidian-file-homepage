@@ -85,31 +85,17 @@ export class MyPlugin extends Plugin {
             }
         });
 
-        // 切換表格編輯模式
         this.addCommand({
-            id: 'switch-mode-table',
-            name: 'Switch Table Mode (read/write)',
+            id: 'open-table-edit-modal',
+            name: 'Open Table Edit Modal',
             hotkeys: [{ modifiers: [], key: 'F4' }],
-            callback: async () => {
+            callback: () => {
                 const view = this.app.workspace.getActiveViewOfType(MarkdownView);
                 if (view) {
                     const editor = view.editor;
                     if (this.isCursorInTable(editor)) {
-                        const tableData = this.extractTableTextToMap(editor);
-                        if (!tableData) return;
-
-                        const modal = new TableEditModal(this.app, tableData, (newTableText: string) => {
-                            const { from, to } = this.getTableRange(editor);
-                            editor.replaceRange(newTableText, from, to);
-                        }, this.pluginSetting);
-
-                        modal.setting.editMode = !modal.setting.editMode;
-                        modal.commonBuildService.buildTable();
-                    } else {
-                        new Notice('游標不在表格內');
+                        this.openTableModal(editor);
                     }
-                } else {
-                    new Notice('游標不在 Markdown 視圖內');
                 }
             }
         });
